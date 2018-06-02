@@ -50,7 +50,7 @@ function draw() {
     } else if (mode == NO_TREE_MODE) {
         stdCollision();
     } else if (mode == TREE_DRAW_MODE) {
-        tree = new QuadTree(new Rect(0, 0, width, height), 1);
+        let tree = new QuadTree(new Rect(0, 0, width, height), 1);
         for (const p of points) {
             tree.insert(p);
         }
