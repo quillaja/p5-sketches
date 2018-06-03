@@ -1,25 +1,35 @@
 // This file implements simple inverse kinematics. Snake is essentially
 // a singly linked list of segments that 'follow' their parent.
 //
-// last edited: 2018-05-18
+// last edited: 2018-06-02
 
-// Segment is a node in a singly linked list representing parts of an Snake.
+/** Segment is a node in a singly linked list representing parts of an Snake. */
 class Segment {
 
-    // makes a new segment
+    /**
+     * Makes a new segment.
+     * @param {number} dist segment's length
+     * @param {p5.Color} col segment's color
+     */
     constructor(dist = 50, col = color(255)) {
         this.child = null;
-        this.pos = new p5.Vector(0, 0);
-        this.dist = dist;
+        this.pos = createVector(0, 0);
+        this.length = dist;
         this.col = col;
     }
 
-    // adds the 'next' node in the list
-    addChild(child) {
+    /**
+     * Set's the node's child, the "next" node in the list
+     * @param {Segment} child the segment to set
+     */
+    setChild(child) {
         this.child = child;
     }
 
-    // move to within this.dist of target
+    /**
+     * Move to within this.dist of target.
+     * @param {p5.Vector} target the location to aim for.
+     */
     update(target) {
 
         // move this.pos to target.
@@ -29,16 +39,20 @@ class Segment {
             // causes the child segment to aim for a spot this.dist away from the
             // current segment's location.
             let newTarget = p5.Vector.sub(this.pos, this.child.pos);
-            newTarget.setMag(newTarget.mag() - this.dist).add(this.child.pos);
+            newTarget.setMag(newTarget.mag() - this.length).add(this.child.pos);
             this.child.update(newTarget);
         }
     }
 }
 
-// Snake is a singly linked list of Segments.
+/** Snake is a singly linked list of Segments. */
 class Snake {
 
-    // makes a new Snake
+    /**
+     * Makes a new Snake
+     * @param {number} numSegments the number of segments to start with
+     * @param {number} segLength a default length for a segment
+     */
     constructor(numSegments, segLength) {
 
         // snake movement parameters
@@ -53,7 +67,7 @@ class Snake {
         // snake linked list data members
         this.head = new Segment(segLength);
         this.tail = this.head;
-        this.head.addChild(new Segment(0)); // a fake segment in order to make last real segment draw
+        this.head.setChild(new Segment(0)); // a fake segment in order to make last real segment draw
 
         // create initial segments
         this.segLength = segLength;
@@ -62,7 +76,11 @@ class Snake {
         }
     }
 
-    // causes the head to update and aim towards target.
+    /**
+     * Causes the head segment to update using steering (seek) force towards
+     * target. The rest of the snake's segments are consequently updated.
+     * @param {p5.Vector} target the location to aim for
+     */
     update(target) {
         // determine "force" toward target, then scale according to the snake's turn speed
         let force = p5.Vector.sub(target, this.head.pos).setMag(this.turnSpeed);
@@ -77,22 +95,26 @@ class Snake {
         this.head.update(p5.Vector.add(this.head.pos, this.velocity));
     }
 
-    // lengthens the snake by 1 segment of given color and size.
+    /**
+     * Lengthens the snake by 1 segment of given color and size.
+     * @param {p5.Color} col the color of the new segment
+     * @param {number} size the length of the new segment
+     */
     grow(col, size) {
         if (!size) { size = this.segLength; }
         let next = new Segment(size, col); // create new tail segment
 
         // keep the fake tail, and add it to the new tail
         let fakeTail = this.tail.child;
-        next.addChild(fakeTail);
+        next.setChild(fakeTail);
         // reassign the tail's child and make the tail point to the new tail
-        this.tail.addChild(next);
+        this.tail.setChild(next);
         this.tail = next;
 
         this.glow = 10;
     }
 
-    // draws the snake to the canvas.
+    /** Draws the snake to the canvas. */
     draw() {
         let cur = this.head;
         let next = this.head.child;
@@ -110,6 +132,9 @@ class Snake {
         if (this.glow) { this.glow -= 0.5; }
     }
 
-    // gets the head position of the snake
+    /** 
+     * Gets the head position of the snake 
+     * @returns a p5.Vector of the head location.
+    */
     get headPosition() { return this.head.pos; }
 }
