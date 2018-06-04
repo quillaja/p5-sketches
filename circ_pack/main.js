@@ -9,12 +9,12 @@
 // constants and variables use in the algorithm
 // i found these constants to produce reasonable results with resonable
 // performance in a resonable amount of time.
-const default_coefficent = 1.1;
+const default_coefficient = 1.1;
 const default_percArea = 0.1;
-const default_maxAttempts = 200;
+const default_maxAttempts = 500;
 const default_maxCircles = 4000;
 
-let coefficent; // determines how quickly the area shrinks
+let coefficient; // determines how quickly the area shrinks
 let percArea; // porportion of total area a0 (0-th circle) will be
 let maxAttempts; // times to try inserting a circle before giving up
 
@@ -165,6 +165,10 @@ function showHelp() {
     msg += "Space - toggle 2D/3D mode\n";
     msg += "R - reset rotation\n";
     msg += "P - toggle orthographic or normal perspective\n";
+    msg += "\nParameters:\n";
+    msg += "'Coefficient' - Changes rate at which circles shrink. Smaller=slower, Larger=faster.\n";
+    msg += "'Porportion area' - The porportion of the screen area which will be used for the first circle.\n";
+    msg += "'Max attempts' - The max number of times to try inserting a circle before 'giving up'.\n";
     alert(msg);
 }
 
@@ -173,11 +177,11 @@ function showHelp() {
  */
 function initialize() {
     // read params from UI
-    coefficent = Number(document.getElementById("coefficent").value);
+    coefficient = Number(document.getElementById("coefficient").value);
     percArea = Number(document.getElementById("percArea").value);
     maxAttempts = Number(document.getElementById("maxAttempts").value);
     // ensure basic validity
-    if (coefficent <= 0) { coefficent = default_coefficent; }
+    if (coefficient <= 0) { coefficient = default_coefficient; }
     if (percArea <= 0) { percArea = default_percArea; }
     if (maxAttempts <= 0) { maxAttempts = default_maxAttempts; }
 
@@ -192,7 +196,7 @@ function initialize() {
 
     // set globals
     a0 = width * height * percArea;
-    g = area(a0, coefficent);
+    g = area(a0, coefficient);
     circles = [];
     gaveUp = false;
 }
@@ -201,7 +205,7 @@ function initialize() {
  * Sets the user-editable parameters to their default values.
  */
 function setDefaultParams() {
-    document.getElementById("coefficent").value = default_coefficent;
+    document.getElementById("coefficient").value = default_coefficient;
     document.getElementById("percArea").value = default_percArea;
     document.getElementById("maxAttempts").value = default_maxAttempts;
 }
