@@ -182,12 +182,10 @@ function initialize() {
     if (maxAttempts <= 0) { maxAttempts = default_maxAttempts; }
 
     // setup click events for buttons
-    document.getElementById("restart").onclick = () => initialize();
-    document.getElementById("setDefaults").onclick = () => setDefaultParams();
-    document.getElementById("help").onclick = (ev) => {
-        showHelp();
-        ev.target.blur(); // if help btn keeps focus, pressing enter or space shows help box =/
-    };
+    // if btn keeps focus pressing enter/space activates btn, which makes odd behavior
+    document.getElementById("restart").onclick = (ev) => { initialize(); ev.target.blur(); };
+    document.getElementById("setDefaults").onclick = (ev) => { setDefaultParams(); ev.target.blur(); };
+    document.getElementById("help").onclick = (ev) => { showHelp(); ev.target.blur(); };
 
     // clear info display
     showInfo("");
