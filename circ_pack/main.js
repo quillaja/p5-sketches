@@ -12,7 +12,7 @@
 const default_coefficent = 1.1;
 const default_percArea = 0.1;
 const default_maxAttempts = 200;
-const default_maxCircles = 5000;
+const default_maxCircles = 4000;
 
 let coefficent; // determines how quickly the area shrinks
 let percArea; // porportion of total area a0 (0-th circle) will be
@@ -28,7 +28,9 @@ let DO3D = false; // "3D mode"
 let rotation; // rotation of the objects
 let orthPersp = true; // true=ortho; false=perspective
 
-
+/**
+ * Basic p5.js setup()
+ */
 function setup() {
     createCanvas(windowWidth, windowHeight - 40, WEBGL);
 
@@ -39,6 +41,9 @@ function setup() {
     rotation = createVector();
 }
 
+/**
+ * Basic p5.js draw()
+ */
 function draw() {
 
     // This is the main part of the actual algorith.
@@ -78,7 +83,7 @@ function draw() {
         // much processing that performance becomes terrible. Therefore, if we
         // produce over a certain number of circles, we 'give up'.
         if (circles.length >= default_maxCircles) {
-            let msg = `DONE: ${default_maxCircles} circles were produced.`;
+            let msg = `DONE: Max of ${default_maxCircles} circles were produced.`;
             showInfo(msg);
             console.log(msg);
             gaveUp = true;
