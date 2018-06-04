@@ -158,18 +158,9 @@ function updateRotation() {
  * support the text display functions.
  */
 function showHelp() {
-    let msg = "Controls:\n";
-    msg += "Enter - Restart the circle packing algorithm.\n";
-    msg += "Up, Down - rotate around X-axis.\n";
-    msg += "Left, Right - rotate around Y-axis.\n";
-    msg += "Space - toggle 2D/3D mode\n";
-    msg += "R - reset rotation\n";
-    msg += "P - toggle orthographic or normal perspective\n";
-    msg += "\nParameters:\n";
-    msg += "'Coefficient' - Changes rate at which circles shrink. Smaller=slower, Larger=faster.\n";
-    msg += "'Porportion area' - The porportion of the screen area which will be used for the first circle.\n";
-    msg += "'Max attempts' - The max number of times to try inserting a circle before 'giving up'.\n";
-    alert(msg);
+    let helpbox = document.getElementById("helpbox");
+    helpbox.hidden = false;
+    document.getElementById("helpboxExit").onclick = () => helpbox.hidden = true;
 }
 
 /**

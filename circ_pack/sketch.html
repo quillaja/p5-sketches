@@ -29,6 +29,35 @@
         nav input {
             width: 8rem;
         }
+
+        #helpbox {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(128, 128, 128, 0.75);
+        }
+
+        #helptext {
+            position: absolute;
+            top: 20%;
+            bottom: 20%;
+            left: 20%;
+            right: 20%;
+            padding: 3rem 2rem;
+            background-color: rgba(255, 255, 255, 1);
+            overflow: scroll;
+        }
+
+        #helptext p,
+        #helptext h4,
+        #helptext button,
+        #helptext li {
+            padding: 0.1rem 0rem;
+            margin: 0.1rem 0rem;
+            font-size: 1.1rem;
+        }
     </style>
 </head>
 
@@ -42,6 +71,41 @@
         <button id="help">Help</button>
         <p id="info"></p>
     </nav>
+    <div id="helpbox" hidden>
+        <div id="helptext">
+            <h4>Controls</h4>
+            <ul>
+                <li>Enter - Restart the circle packing algorithm.</li>
+                <li>Up, Down - rotate around X-axis.</li>
+                <li>Left, Right - rotate around Y-axis.</li>
+                <li>Space - toggle 2D/3D mode.</li>
+                <li>R - reset rotation.</li>
+                <li>P - toggle orthographic or normal perspective.</li>
+            </ul>
+            <h4>Parameters</h4>
+            <ul>
+                <li>Coefficient - Changes rate at which circles shrink. Smaller=slower, Larger=faster. </li>
+                <li>Porportion area - The porportion of the screen area which will be used for the first circle. </li>
+                <li>Max attempts - The max number of times to try inserting a circle before 'giving up'.</li>
+            </ul>
+            <h4>About</h4>
+            <p>This demonstrates a circle (or general shape) packing algorithm discussed in a paper by
+                <a href="http://paulbourke.net/" target="_blank">Paul Bourke</a> entitled
+                <a href="http://www.paulbourke.net/papers/cgat2013/paper.pdf" target="_blank">"Space Filling: A new algorithm for procedural creation of game assets"</a>. The basic method is to start
+                with a shape that has an area (a0), then create additional shapes that have an area porportional to the starting
+                area. The porportion is defined by an infinite sequence that converges. An example sequence, and the one
+                used in this example is
+                <code>g(i) = a0 * Sum(1/i^c)</code>, where c = the "coefficient" metioned above, i = the i-th shape, a0 is the area of the initial shape, and
+                g(i) is the area of the i-th shape.
+            </p>
+            <p>This demo was create by
+                <a href="https://github.com/quillaja" target="_blank">Ben (quillaja)</a> using
+                <a href="https://p5js.org/" target="_blank">p5.js</a>. If you find bugs or have questions, please contact him on github. The code is freely
+                <a href="https://github.com/quillaja/p5-sketches/tree/master/circ_pack" target="_blank">available at github</a> as well.
+            </p>
+            <button id="helpboxExit">Close</button>
+        </div>
+    </div>
 </body>
 
 </html>
