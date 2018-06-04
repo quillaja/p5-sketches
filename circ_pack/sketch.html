@@ -7,17 +7,41 @@
     <title>Circle Packing</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.1/p5.js"></script>
+    <script src="algorithm.js"></script>
     <script src="main.js"></script>
     <style>
         * {
             padding: 0;
             margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        nav {
+            padding: 0.25rem;
+            background-color: rgb(40, 40, 40);
+        }
+
+        nav p {
+            display: inline-block;
+            color: white;
+        }
+
+        nav input {
+            width: 8rem;
         }
     </style>
 </head>
 
 <body>
-
+    <nav>
+        <button id="setDefaults">Defaults</button>
+        <input id="coefficent" type="number" step="0.001" placeholder="coefficent">
+        <input id="percArea" type="number" step="0.001" placeholder="percent area">
+        <input id="maxAttempts" type="number" step="1" placeholder="max attempts">
+        <button id="restart">Restart</button>
+        <button id="help">Help</button>
+        <p id="info"></p>
+    </nav>
 </body>
 
 </html>
