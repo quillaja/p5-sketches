@@ -123,10 +123,10 @@ function updateRotation() {
     if (keyIsDown(DOWN_ARROW)) {
         rotation.add(-speed, 0, 0);
     }
-    if (keyIsDown(LEFT_ARROW)) {
+    if (keyIsDown(RIGHT_ARROW)) {
         rotation.add(0, speed, 0);
     }
-    if (keyIsDown(RIGHT_ARROW)) {
+    if (keyIsDown(LEFT_ARROW)) {
         rotation.add(0, -speed, 0);
     }
 }
