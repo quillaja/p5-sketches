@@ -41,22 +41,30 @@
 
         #helptext {
             position: absolute;
-            top: 20%;
-            bottom: 20%;
-            left: 20%;
-            right: 20%;
-            padding: 3rem 2rem;
+            top: 10%;
+            bottom: 10%;
+            left: 15%;
+            right: 15%;
+            padding: 3rem;
             background-color: rgba(255, 255, 255, 1);
-            overflow: scroll;
+            overflow-y: auto;
         }
 
         #helptext p,
         #helptext h4,
         #helptext button,
         #helptext li {
-            padding: 0.1rem 0rem;
-            margin: 0.1rem 0rem;
+            padding: 0.15rem 0rem;
+            margin: 0.15rem 0rem;
             font-size: 1.1rem;
+        }
+
+        #helptext button {
+            padding: 0.5rem;
+        }
+
+        #helptext ul {
+            margin-left: 2.5rem;
         }
     </style>
 </head>
@@ -73,6 +81,7 @@
     </nav>
     <div id="helpbox" hidden>
         <div id="helptext">
+            <button id="helpboxExit">Close help</button>
             <h4>Controls</h4>
             <ul>
                 <li>Enter - Restart the circle packing algorithm.</li>
@@ -103,7 +112,6 @@
                 <a href="https://p5js.org/" target="_blank">p5.js</a>. If you find bugs or have questions, please contact him on github. The code is freely
                 <a href="https://github.com/quillaja/p5-sketches/tree/master/circ_pack" target="_blank">available at github</a> as well.
             </p>
-            <button id="helpboxExit">Close</button>
         </div>
     </div>
 </body>
