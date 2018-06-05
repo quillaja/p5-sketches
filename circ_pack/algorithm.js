@@ -6,21 +6,66 @@
 // Written 2018-06 by Ben (https://github.com/quillaja)
 
 /**
- * Generates a circle and determines if it's valid.
- * @returns `[bool, Circle]` where bool is true if the Circle is valid.
+ * This is the main part of the actual algorith.
+ * If we haven't given up on trying to pack in more shapes, we're going
+ * to try "maxAttempts" to generate a shape that is of the desired area
+ * (determined by g(i) func), is within the bounding shape, and does
+ * not intersect any other shapes.
  */
-function generateCircle() {
-    let c = new Circle(
-        random(width),
-        random(height),
-        circAtoR(g(circles.length)));
+function pack() {
 
-    // check that circle is contained on the screen
-    let isContained = c.insideRect(0, 0, width, height);
-    // check that circle does not intersect with any of the existing circles.
-    // remember that c is NOT in circles[] yet. This simplifies things.
-    let noIntersection = circles.every(other => !c.intersects(other));
-    return [isContained && noIntersection, c]; // [ok, circle]
+    // if found (ok==true), add the shape to the list of shapes and break
+    // out of the loop. Otherwise, keep trying.
+    if (!gaveUp) {
+        let attempts = 0;
+        let success = false;
+
+        // try adding a shape
+        while (attempts < maxAttempts) {
+            let [ok, s] = packingType.Generate(shapes, boundingShape.area * percArea, boundingShape);
+            if (ok) {
+                shapes.push(s);
+                success = true;
+                break;
+            }
+            attempts++;
+        }
+        // if the success variable is not true, that means we've exhausted
+        // our maximum number of attempts to pack a shape. Then we want to
+        // give up trying to pack more shapes. (but keep drawing in draw()).
+        if (!success) {
+            let msg = `DONE: ${maxAttempts} attempts yielded no valid shape. Total shapes: ${shapes.length}.`;
+            showInfo(msg);
+            console.log(msg);
+            // can't use noLoop() or we can't alter the view anymore
+            gaveUp = true;
+        }
+        // if the parameters for the algorithm are correct, we could produce
+        // so many (up to infinity) shapes that drawing them etc requires so
+        // much processing that performance becomes terrible. Therefore, if we
+        // produce over a certain number of shapes, we 'give up'.
+        if (shapes.length >= default_maxShapes) {
+            let msg = `DONE: Max of ${default_maxShapes} shapes were produced.`;
+            showInfo(msg);
+            console.log(msg);
+            gaveUp = true;
+        }
+    }
+}
+
+/**
+ * Riemann Zeta function.
+ * @param {number} coefficient power to which i will be raised
+ * @returns a function g(i) = 1 / i^coefficient
+ */
+function sequence(coefficient) {
+    return i => {
+        if (i == 0) {
+            return 1;
+        } else {
+            return 1 / Math.pow(i, coefficient);
+        }
+    }
 }
 
 /**
@@ -30,84 +75,4 @@ function generateCircle() {
  */
 function circAtoR(area) {
     return Math.sqrt(area / Math.PI);
-}
-
-/**
- * Riemann Zeta function.
- * @param {number} a0 area of g(0), the area of the initial shape
- * @param {number} coefficient power to which i will be raised
- * @returns a function g(i) = a0 / i^coefficient
- */
-function area(a0, coefficient) {
-    return i => {
-        if (i == 0) {
-            return a0;
-        } else {
-            return a0 / Math.pow(i, coefficient);
-        }
-    }
-}
-
-
-/**
- * Defines a circle.
- */
-class Circle {
-    /**
-     * Makes a circle.
-     * @param {number} x x coordinate of location
-     * @param {number} y y coordinate of location
-     * @param {number} r radius
-     */
-    constructor(x, y, r) {
-        this.pos = createVector(x, y);
-        this.r = r;
-        this.area = Math.PI * r * r; // not used currently
-    }
-
-    /**
-     * Draws circle to screen.
-     * @param {number} hue hue [0,360]
-     */
-    draw(hue) {
-        push();
-        noStroke();
-        colorMode(HSB);
-        translate(this.pos);
-        if (DO3D) { // 3D specific drawing things
-            specularMaterial(color(hue, 100, 100));
-            sphere(this.r);
-        }
-        else { // 2d drawing things
-            fill(color(hue, 100, 100));
-            ellipse(0, 0, 2 * this.r); // draw at (0,0) because used translate()
-        }
-        pop();
-    }
-
-    /**
-     * Returns true if this circle intersects with other. False otherwise.
-     * @param {Circle} other the other circle
-     */
-    intersects(other) {
-        let d = this.pos.dist(other.pos);
-        return d <= this.r + other.r;
-    }
-
-    /**
-     * Returns true if this circle is completely contained inside of the 
-     * rectangle described by the arguments. False otherwise.
-     * @param {number} x x coord of rect corner near origin
-     * @param {number} y y coord of rect corner near origin
-     * @param {number} w width of rect
-     * @param {number} h height of rect
-     */
-    insideRect(x, y, w, h) {
-        return (
-            this.pos.x - this.r > x &&
-            this.pos.x + this.r < x + w &&
-            this.pos.y - this.r > y &&
-            this.pos.y + this.r < y + h
-        )
-    }
 }

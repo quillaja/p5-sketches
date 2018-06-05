@@ -7,6 +7,7 @@
     <title>Circle Packing</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.1/p5.js"></script>
+    <script src="shapes.js"></script>
     <script src="algorithm.js"></script>
     <script src="main.js"></script>
     <style>
@@ -113,9 +114,11 @@
                 </a>. The basic method is to start with a shape that has an area (a<sub>0</sub>), 
                 then create additional shapes that have an area porportional to the starting area. The porportion
                 is defined by an infinite sequence that converges. An example sequence, and the one used in this example
-                is <code>g(i) = a<sub>0</sub> * (1 / i<sup>c</sup>)</code>, where c = the "coefficient" 
+                is <code>g(i) =  1 / i<sup>c</sup></code>, where c = the "coefficient" 
                 metioned above, i = the i<sup>th</sup> shape, a<sub>0</sub> is the area of the 
-                initial shape, and g(i) is the area of the i<sup>th</sup> shape.
+                initial shape, and g(i) is the area of the i<sup>th</sup> shape. Then, the total area 
+                to be filled is given by <code>A = a<sub>0</sub> * ∑ g(i) for i in [1,∞)</code>, if 
+                an appropriate coefficient is chosen.
             </p>
             <p>This demo was created by
                 <a href="https://github.com/quillaja" target="_blank">Ben (quillaja)</a> using

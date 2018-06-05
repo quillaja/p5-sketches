@@ -12,21 +12,23 @@
 const default_coefficient = 1.1;
 const default_percArea = 0.1;
 const default_maxAttempts = 500;
-const default_maxCircles = 4000;
+const default_maxShapes = 4000;
 
 let coefficient; // determines how quickly the area shrinks
-let percArea; // porportion of total area a0 (0-th circle) will be
-let maxAttempts; // times to try inserting a circle before giving up
+let percArea; // porportion of total area a0 (0-th shape) will be
+let maxAttempts; // times to try inserting a shape before giving up
 
-let a0; // area of 0-th (initial) circle
-let g; // function that calculates area of i-th circle
-let circles; // list of Circles
+let boundingShape; // shape to fill
+let g; // function that calculates area of i-th shape
+let shapes; // list of shapes
 let gaveUp = false; // if the area has been fully packed
+let packingType; // type of shape to pack
 
 // variables to control display
 let DO3D = false; // "3D mode"
 let rotation; // rotation of the objects
 let orthPersp = true; // true=ortho; false=perspective
+let drawBound = false;
 
 /**
  * Basic p5.js setup()
@@ -46,49 +48,8 @@ function setup() {
  */
 function draw() {
 
-    // This is the main part of the actual algorith.
-    // if we haven't given up on trying to pack in more circles, we're going
-    // to try "maxAttempts" to generate a circle that is of the desired area
-    // (determined by g(i) func), is within the bounds of the screen, and does
-    // not intersect any other circles.
-    //
-    // if found (ok==true), add the circle to the list of circles and break
-    // out of the loop. Otherwise, keep trying.
-    if (!gaveUp) {
-        let attempts = 0;
-        let success = false;
-
-        // try adding a circle
-        while (attempts < maxAttempts) {
-            let [ok, c] = generateCircle();
-            if (ok) {
-                circles.push(c);
-                success = true;
-                break;
-            }
-            attempts++;
-        }
-        // if the success variable is not true, that means we've exhausted
-        // our maximum number of attempts to pack a circle. Then we want to
-        // give up trying to pack more circles. (but keep drawing in draw()).
-        if (!success) {
-            let msg = `DONE: ${maxAttempts} attempts yielded no valid circle. Total circles: ${circles.length}.`;
-            showInfo(msg);
-            console.log(msg);
-            // can't use noLoop() or we can't alter the view anymore
-            gaveUp = true;
-        }
-        // if the parameters for the algorithm are correct, we could produce
-        // so many (up to infinity) circles that drawing them etc requires so
-        // much processing that performance becomes terrible. Therefore, if we
-        // produce over a certain number of circles, we 'give up'.
-        if (circles.length >= default_maxCircles) {
-            let msg = `DONE: Max of ${default_maxCircles} circles were produced.`;
-            showInfo(msg);
-            console.log(msg);
-            gaveUp = true;
-        }
-    }
+    // try packing a shape!
+    pack();
 
     // clear screen
     background(50);
@@ -109,12 +70,19 @@ function draw() {
     rotateY(rotation.y);
     translate(-width / 2, -height / 2);
 
-    // draw circles
-    circles.forEach((c, i) => c.draw(constrain(i, 0, 330)));
+    if (drawBound) {
+        boundingShape.draw(color(255));
+    }
+
+    // draw shapes
+    colorMode(HSB);
+    shapes.forEach((c, i) => c.draw(color(constrain(i, 0, 330), 100, 100), DO3D));
+    colorMode(RGB);
 }
 
 /**
- * Allows user to toggle "3D mode", perspective, or to reset the rotation.
+ * Allows user to toggle "3D mode", perspective, drawing the bounding shape,
+ * or to reset the rotation.
  */
 function keyPressed() {
     if (keyCode === 32) { // spacebar
@@ -126,8 +94,11 @@ function keyPressed() {
     if (keyCode === 82) { // R key
         rotation.set(0, 0, 0);
     }
+    if (keyCode === 66) { // B key
+        drawBound = !drawBound;
+    }
     if (keyCode === 13) { // Enter key
-        // restart the circle packing algorithm.
+        // restart the shape packing algorithm.
         initialize();
     }
 }
@@ -186,9 +157,26 @@ function initialize() {
     showInfo("");
 
     // set globals
-    a0 = width * height * percArea;
-    g = area(a0, coefficient);
-    circles = [];
+    // a0 = width * height * percArea;
+    if (random() < 0.5) {
+        boundingShape = new Circle(
+            createVector(width / 2, height / 2),
+            Math.PI * Math.pow(height / 2 - 50, 2)
+        );
+    } else {
+        boundingShape = new AARect(
+            createVector(width / 2, height / 2), 1,
+            height * (height - 50));
+    }
+
+    if (random() < 0.5) {
+        packingType = Circle;
+    } else {
+        packingType = AARect;
+    }
+
+    g = sequence(coefficient);
+    shapes = [];
     gaveUp = false;
 }
 
