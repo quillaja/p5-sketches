@@ -6,7 +6,8 @@ function setup() {
     lines = [
         new Line(200, 200, 500, 400),
         new Line(600, 100, 500, 200),
-        new Line(50, 700, 60, 700)
+        new Line(50, 700, 60, 700),
+        new Line(450, 400, 450, 600)
     ];
     c = new Circle(10, 10, 50);
 }
@@ -38,7 +39,7 @@ function draw() {
 }
 
 /**
- * intersect a line and circle
+ * intersect a line and circle (or sphere)
  * @param {Line} l the line
  * @param {Circle} c the circle
  * @returns {[boolean, p5.Vector, p5.Vector[]]} true if intersects
@@ -55,15 +56,16 @@ function intersect(l, c) {
         max(l.p1.z, l.p2.z) < c.center.z - c.r
     );
 
-    if (true) {
+    if (inBB) {
 
         // determine if the circle is within radius r of either of the 
         // segment's end points.
         let inEnds = !(l.p1.dist(c.center) > c.r && l.p2.dist(c.center) > c.r);
 
-
-
+        // often use p2-p1, so this is convenience
         let lseg = p5.Vector.sub(l.p2, l.p1);
+
+        // unused
         // check that the circle intersects anywhere on the LINE,
         // which includes the extensions of the segment past its ends.
         // let ac = pow(lseg.x, 2) + pow(lseg.y, 2) + pow(lseg.z, 2);
@@ -72,13 +74,15 @@ function intersect(l, c) {
         //     pow(l.p1.x, 2) + pow(l.p1.y, 2) + pow(l.p1.z, 2) -
         //     (2 * (c.center.x * l.p1.x + c.center.y * l.p1.y + c.center.z * l.p1.z)) -
         //     pow(c.r, 2);
-
+        //
         // let intersectsLine = 0 <= bc * bc - 4 * ac * cc;
 
         // check for the point P on the segment such that a segment between
         // the point and the center of the circle is perpendicular to the
         // original segment. u is "percent length" of the seg.
-        let num = lseg.x * (c.center.x - l.p1.x) + lseg.y * (c.center.y - l.p1.y) + lseg.z * (c.center.z - l.p1.z);
+        let num = lseg.x * (c.center.x - l.p1.x) +
+            lseg.y * (c.center.y - l.p1.y) +
+            lseg.z * (c.center.z - l.p1.z);
         let den = pow(lseg.x, 2) + pow(lseg.y, 2) + pow(lseg.z, 2);
         let u = num / den;
 
@@ -93,9 +97,6 @@ function intersect(l, c) {
         let pc = undefined;
         if (inDist) {
             let centerAngle = PI - (HALF_PI + asin(sin(HALF_PI) / c.r * distCP));
-            if (isNaN(centerAngle)) {
-                console.log(c.r, distCP);
-            }
             pc = [
                 cp.copy().rotate(centerAngle).setMag(c.r).add(c.center),
                 cp.copy().rotate(-centerAngle).setMag(c.r).add(c.center)
