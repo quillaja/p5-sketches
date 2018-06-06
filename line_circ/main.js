@@ -1,5 +1,7 @@
 let lines;
 let c;
+let p;
+let t;
 
 function setup() {
     createCanvas(800, 800);
@@ -10,6 +12,14 @@ function setup() {
         new Line(450, 400, 450, 600)
     ];
     c = new Circle(10, 10, 50);
+    p = Polygon.Rect(
+        random(200, 600), random(200, 600),
+        random(20, 200), random(20, 200),
+        random(-QUARTER_PI, QUARTER_PI));
+    t = Polygon.EquilTriangle(
+        random(200, 600), random(200, 600),
+        random(10, 400),
+        random(0, PI + HALF_PI));
 }
 
 function draw() {
@@ -17,7 +27,7 @@ function draw() {
     c.moveTo(mouseX, mouseY);
     let col = color(255);
     for (const l of lines) {
-        let [does, pos, pc] = intersect(l, c);
+        let [does, pos, pc] = lineCircle(l, c);
         if (does) {
             col = color(255, 0, 0);
         }
@@ -35,7 +45,19 @@ function draw() {
             }
         }
     }
+
     c.draw(col);
+    if (polygonCircle(p, c)) {
+        p.draw(color(255, 0, 255));
+    } else {
+        p.draw(color(255));
+    }
+
+    if (polygonCircle(t, c)) {
+        t.draw(color(255, 255, 0));
+    } else {
+        t.draw(color(255));
+    }
 }
 
 /**
@@ -44,7 +66,7 @@ function draw() {
  * @param {Circle} c the circle
  * @returns {[boolean, p5.Vector, p5.Vector[]]} true if intersects
  */
-function intersect(l, c) {
+function lineCircle(l, c) {
 
     // check for overlap of AABBs of circle and line seg
     let inBB = !(
@@ -112,6 +134,16 @@ function intersect(l, c) {
     return [false, undefined, undefined];
 }
 
+/**
+ * intersects a polygon and circle
+ * @param {Polygon} poly polygon
+ * @param {Circle} circ circle
+ */
+function polygonCircle(poly, circ) {
+    return poly.center.dist(circ.center) < poly.r ||
+        poly.edges.some((e) => lineCircle(e, circ)[0]);
+}
+
 class Line {
     constructor(x1, y1, x2, y2) {
         this.p1 = createVector(x1, y1);
@@ -143,5 +175,65 @@ class Circle {
     moveTo(x, y) {
         this.center.x = x;
         this.center.y = y;
+    }
+}
+
+class Polygon {
+    /**
+     * 
+     * @param {p5.Vector[]} verts Clockwise list of verticies
+     */
+    constructor(verts) {
+        this.verts = verts;
+        this.edges = [];
+        for (let i = 0; i < verts.length - 1; i++) {
+            this.edges.push(new Line(
+                verts[i].x, verts[i].y,
+                verts[i + 1].x, verts[i + 1].y
+            ));
+        }
+        this.edges.push(new Line(
+            verts[verts.length - 1].x, verts[verts.length - 1].y,
+            verts[0].x, verts[0].y
+        ))
+
+        this.center = createVector(0, 0, 0);
+        verts.forEach((v) => this.center.add(v));
+        this.center.div(verts.length);
+
+        this.r = verts.map((v) => this.center.dist(v)).reduce((acc, d) => max(acc, d), -1);
+    }
+
+    draw(color) {
+        for (const e of this.edges) {
+            e.draw(color);
+        }
+        push();
+        stroke(color);
+        point(this.center.x, this.center.y);
+        pop();
+    }
+
+    static Rect(xcenter, ycenter, width, height, angle) {
+        let center = createVector(xcenter, ycenter);
+        let corners = [
+            createVector(- width / 2, - height / 2).rotate(angle).add(center),
+            createVector(width / 2, - height / 2).rotate(angle).add(center),
+            createVector(width / 2, height / 2).rotate(angle).add(center),
+            createVector(- width / 2, height / 2).rotate(angle).add(center),
+        ];
+        return new Polygon(corners);
+    }
+
+    static EquilTriangle(xcenter, ycenter, height, angle) {
+        let center = createVector(xcenter, ycenter);
+        let top = createVector(0, -height / 2);
+        let corners = [
+            top.copy().rotate(angle).add(center),
+            top.copy().rotate(angle + TWO_PI / 3).add(center),
+            top.copy().rotate(angle + 2 * TWO_PI / 3).add(center)
+
+        ];
+        return new Polygon(corners);
     }
 }
