@@ -1,25 +1,35 @@
 let lines;
 let c;
-let p;
-let t;
+let shapes;
 
 function setup() {
     createCanvas(800, 800);
     lines = [
-        new Line(200, 200, 500, 400),
-        new Line(600, 100, 500, 200),
-        new Line(50, 700, 60, 700),
-        new Line(450, 400, 450, 600)
+        // new Line(200, 200, 500, 400),
+        // new Line(600, 100, 500, 200),
+        // new Line(50, 700, 60, 700),
+        // new Line(450, 400, 450, 600)
     ];
     c = new Circle(10, 10, 50);
-    p = Polygon.Rect(
-        random(200, 600), random(200, 600),
-        random(20, 200), random(20, 200),
-        random(-QUARTER_PI, QUARTER_PI));
-    t = Polygon.EquilTriangle(
-        random(200, 600), random(200, 600),
-        random(10, 400),
-        random(0, PI + HALF_PI));
+    shapes = [
+        Polygon.Rect(
+            random(200, 600), random(200, 600),
+            random(20, 200), random(20, 200),
+            random(-QUARTER_PI, QUARTER_PI)),
+        Polygon.EquilateralTriangle(
+            random(200, 600), random(200, 600),
+            random(10, 400),
+            random(0, PI + HALF_PI)),
+        Polygon.IsoscelesTriangle(
+            random(200, 600), random(200, 600),
+            random(10, 400), random(10, 200),
+            random(0, PI + HALF_PI)),
+        Polygon.RegularNSided(
+            random(100, 700), random(100, 700),
+            random(3, 10), random(10, 200),
+            random(0, PI))
+    ];
+
 }
 
 function draw() {
@@ -46,18 +56,16 @@ function draw() {
         }
     }
 
-    c.draw(col);
-    if (polygonCircle(p, c)) {
-        p.draw(color(255, 0, 255));
-    } else {
-        p.draw(color(255));
+
+    for (const p of shapes) {
+        if (polygonCircle(p, c)) {
+            p.draw(color(random(255), random(255), random(255)));
+        } else {
+            p.draw(color(255));
+        }
     }
 
-    if (polygonCircle(t, c)) {
-        t.draw(color(255, 255, 0));
-    } else {
-        t.draw(color(255));
-    }
+    c.draw(col);
 }
 
 /**
@@ -140,8 +148,8 @@ function lineCircle(l, c) {
  * @param {Circle} circ circle
  */
 function polygonCircle(poly, circ) {
-    return poly.center.dist(circ.center) < poly.r ||
-        poly.edges.some((e) => lineCircle(e, circ)[0]);
+    // can't determine if the cirlce is INSIDE the polygon but not touching edges!
+    return poly.edges.some((e) => lineCircle(e, circ)[0])// || poly.center.dist(circ.center) < poly.r;
 }
 
 class Line {
@@ -225,7 +233,7 @@ class Polygon {
         return new Polygon(corners);
     }
 
-    static EquilTriangle(xcenter, ycenter, height, angle) {
+    static EquilateralTriangle(xcenter, ycenter, height, angle) {
         let center = createVector(xcenter, ycenter);
         let top = createVector(0, -height / 2);
         let corners = [
@@ -234,6 +242,34 @@ class Polygon {
             top.copy().rotate(angle + 2 * TWO_PI / 3).add(center)
 
         ];
+        return new Polygon(corners);
+    }
+
+    static IsoscelesTriangle(xcenter, ycenter, height, base, angle) {
+        let center = createVector(xcenter, ycenter);
+        let corners = [
+            createVector(0, -height * 2 / 3).rotate(angle).add(center),
+            createVector(base / 2, height * 1 / 3).rotate(angle).add(center),
+            createVector(-base / 2, height * 1 / 3).rotate(angle).add(center)
+
+        ];
+        return new Polygon(corners);
+    }
+
+    static RegularNSided(xcenter, ycenter, sides, circumradius, angle) {
+        sides = floor(sides);
+        if (sides < 3) {
+            throw new Error("Argument error: 'sides' must be 3 or more.");
+        }
+
+        let center = createVector(xcenter, ycenter);
+        let inAngle = TWO_PI / sides;
+        let top = createVector(0, -circumradius);
+        let corners = [];
+        for (let i = 0; i < sides; i++) {
+            let v = top.copy().rotate(i * inAngle + angle).add(center);
+            corners.push(v);
+        }
         return new Polygon(corners);
     }
 }
