@@ -5,12 +5,13 @@ let shapes;
 function setup() {
     createCanvas(800, 800);
     lines = [
-        // new Line(200, 200, 500, 400),
-        // new Line(600, 100, 500, 200),
-        // new Line(50, 700, 60, 700),
-        // new Line(450, 400, 450, 600)
+        new Line(200, 200, 500, 400),
+        new Line(600, 100, 500, 200),
+        new Line(50, 700, 60, 700),
+        new Line(450, 400, 450, 600)
     ];
-    c = new Circle(10, 10, 50);
+    // c = new Circle(10, 10, 50);
+    c = new Line(0, 0, -20, 20);
     shapes = [
         Polygon.Rect(
             random(200, 600), random(200, 600),
@@ -35,9 +36,12 @@ function setup() {
 function draw() {
     background(50);
     c.moveTo(mouseX, mouseY);
+
     let col = color(255);
     for (const l of lines) {
-        let [does, pos, pc] = lineCircle(l, c);
+        // let [does, pos, pc] = lineCircle(l, c);
+        let [does, pos] = lineLine(c, l);
+        // let [does, pos] = pointLine(createVector(mouseX, mouseY), l);
         if (does) {
             col = color(255, 0, 0);
         }
@@ -47,25 +51,127 @@ function draw() {
             fill(0, 255, 0);
             ellipse(pos.x, pos.y, 4);
         }
-        if (pc) {
-            for (const p of pc) {
-                noStroke();
-                fill(0, 255, 255);
-                ellipse(p.x, p.y, 5);
-            }
-        }
+        // if (pc) {
+        //     for (const p of pc) {
+        //         noStroke();
+        //         fill(0, 255, 255);
+        //         ellipse(p.x, p.y, 5);
+        //     }
+        // }
     }
 
 
-    for (const p of shapes) {
-        if (polygonCircle(p, c)) {
-            p.draw(color(random(255), random(255), random(255)));
-        } else {
-            p.draw(color(255));
-        }
-    }
+    // for (const p of shapes) {
+    //     if (polygonCircle(p, c)) {
+    //         p.draw(color(random(255), random(255), random(255)));
+    //     } else {
+    //         p.draw(color(255));
+    //     }
+    // }
 
     c.draw(col);
+}
+
+/**
+ * intersect 2 lines
+ * @param {Line} a one
+ * @param {Line} b other
+ * @return {[boolean,p5.Vector]} result
+ */
+function lineLine(a, b) {
+
+    // test AABB first to prevent doing unnecessary calculations
+    let intersectAABB = !(
+        min(a.p1.x, a.p2.x) > max(b.p1.x, b.p2.x) || // left a > right b
+        max(a.p1.x, a.p2.x) < min(b.p1.x, b.p2.x) || // right a < left b
+        min(a.p1.y, a.p2.y) > max(b.p1.y, b.p2.y) || // bottom a > top b
+        max(a.p1.y, a.p2.y) < min(b.p1.y, b.p2.y)    // top a < bottom b
+    );
+
+    if (!intersectAABB) {
+        return [false, undefined];
+    }
+
+    // derivation
+    // m = y2-y1/x2-x1
+    // y = mx+b
+    // y - mx = b
+    //   ma*x + ba = mb*x + bb
+    //   ma*x - mb*x = bb-ba
+    //   x(ma-mb) = bb-ba
+    //   x = (bb-ba)/(ma-mb)
+    // p = p0+u(p1-p0)
+    //   u = (p-p0)/(p1-p0)
+
+    let da = p5.Vector.sub(a.p2, a.p1);
+    let db = p5.Vector.sub(b.p2, b.p1);
+    let ma = da.y / da.x; // what if line is vertical? see below
+    let mb = db.y / db.x;
+
+    // special case
+    // lines are parallel (including 2 vertical lines)
+    // slopes are the same (or both "+/-infinity")
+    if (ma == mb || (da.x == 0 && db.x == 0)) {
+        // must check if either of a's points are on b AND vice-versa.
+        let intersect =
+            pointLine(a.p1, b)[0] ||
+            pointLine(a.p2, b)[0] ||
+            pointLine(b.p1, a)[0] ||
+            pointLine(b.p1, a)[0];
+
+        // undefined intersection point...there are infinite points.
+        return [intersect, undefined];
+    }
+
+    let ba = a.p1.y - ma * a.p1.x;
+    let bb = b.p1.y - mb * b.p1.x;
+
+    // general case: intersect at (px,py)
+    let px = (bb - ba) / (ma - mb);
+    let py = ma * px + ba;
+
+    // special case 
+    // already took care of parallel lines, so only a OR b could be vertical.
+    if (da.x == 0) { // a is vertical, b is not
+        px = a.p1.x;
+        py = mb * px + bb;
+    } else if (db.x == 0) { // b is vertical, a is not
+        px = b.p1.x;
+        py = ma * px + ba;
+    }
+    let p = createVector(px, py);
+
+    // get vector from p1 to p = vec(p,p1),
+    // since p IS somewhere on the line (not segment), vec(p,p1) will
+    // be "on top of" line, and thus dot product divided by the
+    // square of the segment's magnitude will give p's porportional distance
+    // from p1.
+    // do for both segments.
+    let ap = p5.Vector.sub(p, a.p1);
+    let ua = p5.Vector.dot(ap, da) / da.magSq();
+
+    let bp = p5.Vector.sub(p, b.p1);
+    let ub = p5.Vector.dot(bp, db) / db.magSq();
+
+    // if p is on a and b, u is in [0,1]
+    return [(0 <= ua && ua <= 1) && (0 <= ub && ub <= 1), p];
+}
+
+/**
+ * is point on line?
+ * @param {p5.Vector} pt point
+ * @param {Line} ln line
+ * @return {[boolean,number]} bool, u = porpotion of sub(ln.p2, ln.p1)
+ */
+function pointLine(pt, ln) {
+    // use similar method to the last part of lineLine()
+    let dln = p5.Vector.sub(ln.p2, ln.p1);
+    let lnp = p5.Vector.sub(pt, ln.p1);
+    if (p5.Vector.cross(dln, lnp).mag() > 0) { //pt is not on ln
+        return [false, undefined];
+    }
+    let u = p5.Vector.dot(lnp, dln) / dln.magSq();
+    return [0 <= u && u <= 1, u];
 }
 
 /**
@@ -163,6 +269,12 @@ class Line {
         stroke(color);
         line(this.p1.x, this.p1.y, this.p2.x, this.p2.y);
         pop();
+    }
+
+    moveTo(x, y) {
+        let dp = p5.Vector.sub(this.p2, this.p1);
+        this.p1.set(x, y);
+        this.p2.set(x + dp.x, y + dp.y);
     }
 }
 
