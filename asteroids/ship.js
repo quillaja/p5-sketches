@@ -6,6 +6,9 @@ class Ship {
     static get INVULNERABLE_TIME() { return 100; } // frames
     static get FULL_SHIELD() { return 100; }
 
+    /**
+     * Creates a ship.
+     */
     constructor() {
         this.pos = createVector(width / 2, height / 2);
         this.vel = createVector(0, 0);
@@ -19,14 +22,28 @@ class Ship {
         this.shields = 100;
         this.reload = 0;
         this.invulnerable = 0;
+        this.invulnerableColor = color(255, 255, 0);
 
+        /**
+         * the ship keeps the list of bullets it fired.
+         * @type {Bullet[]}
+         */
         this.bullets = [];
 
         this.score = 0;
     }
 
+    /**
+     * True if the ship is in temporary invulnerability mode (after being hit).
+     * @returns {boolean} true if invulnerable
+     */
     get isInvulnerable() { return this.invulnerable > 0; }
 
+    /**
+     * Reduces ship's shield (life). Controls alive/dead state, as well as 
+     * sets temporary invulnerability after being hit.
+     * @param {number} dmg the amount of damage
+     */
     applyDamage(dmg) {
         if (!this.isInvulnerable) {
             this.shields -= dmg;
@@ -37,9 +54,14 @@ class Ship {
         }
     }
 
+    /**
+     * Updates the ship's position, wraps screen. Reads keyboard for controls. 
+     * Updates gun reload and invulnerabilty counters. Refills shield every 
+     * 100 points scored.
+     */
     update() {
         // refill shields every 100 points
-        if (this.shields > 0 && this.score % 100 == 0) {
+        if (this.score > 0 && this.score % 100 == 0) {
             this.shields = Ship.FULL_SHIELD;
         }
 
@@ -88,12 +110,16 @@ class Ship {
         else if (this.pos.y > height) { this.pos.y = 0; }
     }
 
+    /**
+     * Draws the ship to the screen, and also draws the shield and score HUD.
+     */
     draw() {
         push();
         noStroke();
-        fill(this.col);
         if (this.isInvulnerable) {
-            fill(color(255, 255, 0));
+            fill(this.invulnerableColor);
+        } else {
+            fill(this.col);
         }
         translate(this.pos);
         rotate(this.dir);
@@ -104,11 +130,11 @@ class Ship {
         // stroke(0, 0, 255);
         // ellipse(0, 0, this.radius * 2);
 
-        //shield display
+        // shield display
+        // unrotate and untranslate back to normal coords.
         rotate(-this.dir);
         translate(-this.pos.x, -this.pos.y);
-        noStroke();
-        fill(color(255, 0, 0));
+        fill(255, 0, 0);
         rect(5, 5, this.shields, 20);
         noFill();
         stroke(255);
@@ -127,6 +153,11 @@ class Ship {
 class Bullet {
     static get SPEED() { return 10; }//px/frame
 
+    /**
+     * Creates a bullet
+     * @param {p5.Vector} pos screen position
+     * @param {number} dir heading/direction as an angle (radians)
+     */
     constructor(pos, dir) {
         this.pos = pos;
         this.vel = p5.Vector.fromAngle(dir, Bullet.SPEED);
@@ -136,9 +167,13 @@ class Bullet {
 
         this.isAlive = true;
 
-        this.power = 1;
+        this.power = 1; // damage power
     }
 
+    /**
+     * Updates the bullet's position using velocity. Kills the bullet
+     * if it leaves the screen.
+     */
     update() {
         // move
         this.pos.add(this.vel);
@@ -148,6 +183,9 @@ class Bullet {
         if (this.pos.y < 0 || this.pos.y > height) { this.isAlive = false; }
     }
 
+    /**
+     * Draws the bullet on the screen.
+     */
     draw() {
         push();
         noStroke();

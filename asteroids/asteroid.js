@@ -1,6 +1,12 @@
 class Asteroid {
     static get MAX_SPEED() { return 16; } // pixels/frame
 
+    /**
+     * Creates an asteroid
+     * @param {p5.Vector} pos screen position
+     * @param {number} dir direction as an angle/heading
+     * @param {number} radius size of asteroid
+     */
     constructor(pos, dir, radius = 64) {
         this.pos = pos;
         this.vel = p5.Vector.fromAngle(dir, Asteroid.MAX_SPEED / radius + random());
@@ -11,28 +17,43 @@ class Asteroid {
         this.life = radius / 16;
         this.isAlive = true;
 
+        /**
+         * vertices of asteroid shape
+         * @type {p5.Vector[]}
+         */
         this.verts = [];
-        let n = 16;//floor(random(this.radius * 0.3, this.radius));
+        let n = 10;//floor(random(this.radius * 0.3, this.radius));
+        if (this.radius <= 16) {
+            n = 6; // lower detail for smaller ones
+        }
         for (let i = 0; i < n; i++) {
             let v = p5.Vector.fromAngle(
                 i / n * TWO_PI,
-                this.radius + random(-0.15 * this.radius, 0.15 * this.radius));
+                this.radius + random(-0.25 * this.radius, 0.25 * this.radius));
             this.verts.push(v);
         }
         this.verts.push(this.verts[0].copy());
     }
 
+    /**
+     * Decreases life of the asteroid by dmg, updates alive/dead state,
+     * and spawns new asteroids if dead.
+     * @param {number} dmg amount of damage to apply
+     * @returns {Asteroid[]} new asteroids, or empty array
+     */
     applyDamage(dmg) {
         this.life -= dmg;
         let frags = [];
         if (this.life <= 0) {
             this.isAlive = false;
-            if (this.radius > 8) {
+            // split into 2
+            if (this.radius > 8) { // don't want them getting smaller than 8!
                 for (let i = 0; i < 2; i++) {
                     frags.push(new Asteroid(
                         this.pos.copy(),
                         this.vel.copy().rotate(random(-PI, PI)).heading(),
                         this.radius / 2
+                        // starting with 64 will produce: 64,32,16,8.
                     ));
                 }
             }
@@ -40,16 +61,23 @@ class Asteroid {
         return frags;
     }
 
+    /**
+     * Updates the asteroid's position according to its velocity. Wraps screen.
+     */
     update() {
         // move
         this.pos.add(this.vel);
         // wrap screen
-        if (this.pos.x < -100) { this.pos.x = width + 100; }
-        else if (this.pos.x > width + 100) { this.pos.x = -100; }
-        if (this.pos.y < -100) { this.pos.y = height + 100; }
-        else if (this.pos.y > height + 100) { this.pos.y = -100; }
+        const margin = 100;
+        if (this.pos.x < -margin) { this.pos.x = width + margin; }
+        else if (this.pos.x > width + margin) { this.pos.x = -margin; }
+        if (this.pos.y < -margin) { this.pos.y = height + margin; }
+        else if (this.pos.y > height + margin) { this.pos.y = -margin; }
     }
 
+    /**
+     * Draws the asteroid on the screen.
+     */
     draw() {
         push();
         // noFill();
@@ -74,6 +102,13 @@ class Asteroid {
         pop();
     }
 
+    /**
+     * Creates new asteroids off screen at a random position around the edge.
+     * @param {number} num how many to make
+     * @param {number} radius size to make them (if undefined, will use
+     * Asteroid's constructor default.)
+     * @returns {Asteroid[]} the new asteroids
+     */
     static Generate(num = 1, radius = undefined) {
         let roids = [];
         for (; num > 0; num--) {
