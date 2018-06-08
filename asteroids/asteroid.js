@@ -6,7 +6,7 @@ class Asteroid {
         this.vel = p5.Vector.fromAngle(dir, Asteroid.MAX_SPEED / radius + random());
 
         this.radius = radius;
-        this.col = color(255);//color(75,54,33);
+        this.col = color(75, 54, 33);
 
         this.life = radius / 16;
         this.isAlive = true;
@@ -41,10 +41,6 @@ class Asteroid {
     }
 
     update() {
-        // check life
-        // if life <= 0, split into smaller asteroids IF radius > some number
-
-
         // move
         this.pos.add(this.vel);
         // wrap screen
@@ -56,11 +52,16 @@ class Asteroid {
 
     draw() {
         push();
-        noFill();
+        // noFill();
+        fill(this.col); // used when drawing asteroids with triangles.
         stroke(this.col);
         translate(this.pos);
         for (let i = 0; i < this.verts.length - 1; i++) {
-            line(
+            // line(
+            //     this.verts[i].x, this.verts[i].y,
+            //     this.verts[i + 1].x, this.verts[i + 1].y);
+            triangle(
+                0, 0,
                 this.verts[i].x, this.verts[i].y,
                 this.verts[i + 1].x, this.verts[i + 1].y);
         }

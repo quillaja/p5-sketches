@@ -17,7 +17,7 @@ function initialize() {
 }
 
 function draw() {
-    background(40);
+    background(5);
 
     ship.update();
     ship.bullets.forEach((b) => b.update());

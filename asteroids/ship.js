@@ -4,6 +4,7 @@ class Ship {
     static get TURN_SPEED() { return 0.05; } // about PI/60 radians/frame
     static get RELOAD_TIME() { return 12; } // frames
     static get INVULNERABLE_TIME() { return 100; } // frames
+    static get FULL_SHIELD() { return 100; }
 
     constructor() {
         this.pos = createVector(width / 2, height / 2);
@@ -37,7 +38,10 @@ class Ship {
     }
 
     update() {
-        // check shield amount
+        // refill shields every 100 points
+        if (this.shields > 0 && this.score % 100 == 0) {
+            this.shields = Ship.FULL_SHIELD;
+        }
 
         // alter reload
         this.reload--;
