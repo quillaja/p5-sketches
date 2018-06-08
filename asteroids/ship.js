@@ -135,6 +135,8 @@ class Bullet {
         this.col = color(255, 0, 0);
 
         this.isAlive = true;
+
+        this.power = 1;
     }
 
     update() {

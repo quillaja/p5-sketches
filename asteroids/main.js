@@ -25,16 +25,30 @@ function draw() {
 
     let frags = [];
     for (const a of asteroids) {
+        if (!a.isAlive) { continue; }
         for (const b of ship.bullets) {
-            if (b.pos.dist(a.pos) <= a.radius + b.radius) {
+            if (b.isAlive &&
+                !( // AABB test
+                    a.pos.x - a.radius > b.pos.x + b.radius ||
+                    a.pos.x + a.radius < b.pos.x - b.radius ||
+                    a.pos.y + a.radius < b.pos.y - b.radius ||
+                    a.pos.y - a.radius > b.pos.y + b.radius
+                ) && // circle-circle test
+                b.pos.dist(a.pos) <= a.radius + b.radius) {
                 // collision
-                let f = a.applyDamage(1);
+                let f = a.applyDamage(b.power);
                 frags.push(...f);
                 b.isAlive = false;
             }
         }
 
-        if (ship.pos.dist(a.pos) <= ship.radius + a.radius) {
+        if (!( // AABB test
+            a.pos.x - a.radius > ship.pos.x + ship.radius ||
+            a.pos.x + a.radius < ship.pos.x - ship.radius ||
+            a.pos.y + a.radius < ship.pos.y - ship.radius ||
+            a.pos.y - a.radius > ship.pos.y + ship.radius
+        ) && // circle-circle test
+            ship.pos.dist(a.pos) <= ship.radius + a.radius) {
             // ship collision
             ship.applyDamage(a.radius);
         }
@@ -54,6 +68,7 @@ function draw() {
     if (spawnCounter >= spawnAfter) {
         asteroids.push(...Asteroid.Generate(1));
         spawnCounter = 0;
+        // console.log(frameRate());
     }
 
     if (!ship.isAlive) {
