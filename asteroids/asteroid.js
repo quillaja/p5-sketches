@@ -13,6 +13,7 @@ class Asteroid {
 
         this.radius = radius;
         this.col = color(75, 54, 33);
+        // this.col = color(255);
 
         this.life = radius / 16;
         this.isAlive = true;
@@ -22,7 +23,7 @@ class Asteroid {
          * @type {p5.Vector[]}
          */
         this.verts = [];
-        let n = 10;//floor(random(this.radius * 0.3, this.radius));
+        let n = 8;//floor(random(this.radius * 0.3, this.radius));
         if (this.radius <= 16) {
             n = 6; // lower detail for smaller ones
         }
@@ -32,7 +33,7 @@ class Asteroid {
                 this.radius + random(-0.25 * this.radius, 0.25 * this.radius));
             this.verts.push(v);
         }
-        this.verts.push(this.verts[0].copy());
+        // this.verts.push(this.verts[0].copy());
     }
 
     /**
@@ -83,16 +84,19 @@ class Asteroid {
         // noFill();
         fill(this.col); // used when drawing asteroids with triangles.
         stroke(this.col);
-        translate(this.pos);
-        for (let i = 0; i < this.verts.length - 1; i++) {
+        // translate(this.pos); // can't use with begin/endShape()
+        beginShape();
+        for (let i = 0; i < this.verts.length; i++) {
             // line(
             //     this.verts[i].x, this.verts[i].y,
             //     this.verts[i + 1].x, this.verts[i + 1].y);
-            triangle(
-                0, 0,
-                this.verts[i].x, this.verts[i].y,
-                this.verts[i + 1].x, this.verts[i + 1].y);
+            // triangle(
+            //     0, 0,
+            //     this.verts[i].x, this.verts[i].y,
+            //     this.verts[i + 1].x, this.verts[i + 1].y);
+            vertex(this.verts[i].x + this.pos.x, this.verts[i].y + this.pos.y);
         }
+        endShape(CLOSE);
 
         // display hit circle
         // noFill();

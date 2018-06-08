@@ -23,6 +23,7 @@ class Ship {
         this.reload = 0;
         this.invulnerable = 0;
         this.invulnerableColor = color(255, 255, 0);
+        this.isGod = false;
 
         /**
          * the ship keeps the list of bullets it fired.
@@ -37,7 +38,7 @@ class Ship {
      * True if the ship is in temporary invulnerability mode (after being hit).
      * @returns {boolean} true if invulnerable
      */
-    get isInvulnerable() { return this.invulnerable > 0; }
+    get isInvulnerable() { return this.invulnerable > 0 || this.isGod; }
 
     /**
      * Reduces ship's shield (life). Controls alive/dead state, as well as 
