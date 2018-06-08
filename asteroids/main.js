@@ -33,20 +33,38 @@ function draw() {
     ship.bullets.forEach((b) => b.update());
     asteroids.forEach((a) => a.update());
 
-    // perform collisions
-    let frags = [];
+    // build quadtree
+    let tree = new QuadTree(new Rect(0, 0, width, height), 5);
     for (const a of asteroids) {
-        if (!a.isAlive) { continue; } // skip if this asteroid is marked dead
-        for (const b of ship.bullets) {
-            // bullet-asteroid collision
-            if (b.isAlive && AABB(b, a) && CircleCircle(b, a)) {
+        let p = new Point(a.pos.x, a.pos.y);
+        p.data = a; // attach asteroid
+        tree.insert(p);
+    }
+
+    // perform collisions
+    // first on asteroid-bullets
+    let frags = [];
+    for (const b of ship.bullets) {
+        // bullet-asteroid collision
+        let found = tree.query(new Rect(
+            b.pos.x - 64, b.pos.y - 64,
+            b.pos.x + 64, b.pos.y + 64));
+        for (const p of found) {
+            let a = p.data; // retrieve asteroid
+            if (a.isAlive && b.isAlive && AABB(b, a) && CircleCircle(b, a)) {
                 let f = a.applyDamage(b.power);
                 frags.push(...f);
                 b.isAlive = false;
             }
         }
+    }
 
-        // ship-asteroid collision
+    // ship-asteroid collision
+    let found = tree.query(new Rect(
+        ship.pos.x - 64, ship.pos.y - 64,
+        ship.pos.x + 64, ship.pos.y + 64));
+    for (const p of found) {
+        let a = p.data;
         if (AABB(ship, a) && CircleCircle(ship, a)) {
             ship.applyDamage(a.radius);
         }
@@ -54,18 +72,8 @@ function draw() {
 
     // remove dead
     ship.bullets = ship.bullets.filter((b) => b.isAlive);
-    // for (let i = ship.bullets.length - 1; i >= 0; i--) {
-    //     if (!ship.bullets[i].isAlive) {
-    //         ship.bullets.splice(i, 1);
-    //     }
-    // }
     let prevLen = asteroids.length;
     asteroids = asteroids.filter((a) => a.isAlive);
-    // for (let i = asteroids.length - 1; i >= 0; i--) {
-    //     if (!asteroids[i].isAlive) {
-    //         asteroids.splice(i, 1);
-    //     }
-    // }
     ship.score += prevLen - asteroids.length;
     // add new
     asteroids.push(...frags);
