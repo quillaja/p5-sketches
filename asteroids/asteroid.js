@@ -52,7 +52,7 @@ class Asteroid {
                 for (let i = 0; i < 2; i++) {
                     frags.push(new Asteroid(
                         this.pos.copy(),
-                        this.vel.copy().rotate(random(-PI, PI)).heading(),
+                        this.vel.heading() + random(-HALF_PI, HALF_PI),
                         this.radius / 2
                         // starting with 64 will produce: 64,32,16,8.
                     ));
@@ -116,10 +116,11 @@ class Asteroid {
     static Generate(num = 1, radius = undefined) {
         let roids = [];
         for (; num > 0; num--) {
-            let aim = createVector(-width / 2, -height / 2);
-            aim.rotate(random(0, TWO_PI));
-            let a = new Asteroid(aim.copy().mult(1.1).add(width / 2, height / 2), aim.heading(), radius);
-            roids.push(a);
+            let spawnLoc = p5.Vector.fromAngle(random(0, TWO_PI), dist(0, 0, width / 2, height / 2));
+            let reverseHeading = spawnLoc.heading() + PI + random(-PI / 6, PI / 6);
+            spawnLoc.mult(1.1).add(width / 2, height / 2); // lengthen slightly and translate to screen center
+
+            roids.push(new Asteroid(spawnLoc, reverseHeading, radius));
         }
         return roids;
     }

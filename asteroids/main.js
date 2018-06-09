@@ -44,11 +44,13 @@ function draw() {
     // perform collisions
     // first on asteroid-bullets
     let frags = [];
+    let maxCollisionTests = 0;
     for (const b of ship.bullets) {
         // bullet-asteroid collision
         let found = tree.query(new Rect(
             b.pos.x - 64, b.pos.y - 64,
             b.pos.x + 64, b.pos.y + 64));
+        maxCollisionTests += found.length;
         for (const p of found) {
             let a = p.data; // retrieve asteroid
             if (a.isAlive && b.isAlive && AABB(b, a) && CircleCircle(b, a)) {
@@ -63,6 +65,7 @@ function draw() {
     let found = tree.query(new Rect(
         ship.pos.x - 64, ship.pos.y - 64,
         ship.pos.x + 64, ship.pos.y + 64));
+    maxCollisionTests += found.length;
     for (const p of found) {
         let a = p.data;
         if (AABB(ship, a) && CircleCircle(ship, a)) {
@@ -83,7 +86,10 @@ function draw() {
     if (spawnCounter >= spawnAfter) {
         asteroids.push(...Asteroid.Generate(1));
         spawnCounter = 0;
-        console.log(frameRate(), asteroids.length);
+        console.log(
+            ceil(frameRate()),
+            asteroids.length,
+            maxCollisionTests);
     }
 
     // check ship state. restart game if it's dead
