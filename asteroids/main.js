@@ -22,14 +22,26 @@ let font;
 // }
 
 function setup() {
-    createCanvas(windowWidth, windowHeight - 5);
+    createCanvas(windowWidth, windowHeight - 10);
 
     initialize();
 
-    // textFont(font); // can't load using file:// protocol
+    //textFont(font); // can't load using file:// protocol
+    // textFont("VT323");
 }
 
-function initialize() {
+function initialize(restart = false) {
+    if (restart) {
+        let display = document.getElementById("score-display");
+        display.hidden = false;
+        document.getElementById("score-close-btn").onclick = () => {
+            display.hidden = true;
+            initialize();
+        };
+
+        document.getElementById("final-score").innerText = ship.score.toString();
+    }
+
     spawnCounter = 0;
     ship = new Ship();
     asteroids = Asteroid.Generate(1);
@@ -104,7 +116,7 @@ function draw() {
 
     // check ship state. restart game if it's dead
     if (!ship.isAlive) {
-        initialize();
+        initialize(true);
     }
 
     // draw /////////////////////

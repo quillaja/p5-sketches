@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Asteroids</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet"> -->
+    <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
     <!-- <link href="https://fonts.googleapis.com/css?family=VT323" rel="stylesheet"> -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.1/p5.js"></script>
     <script src="quadtree.js"></script>
@@ -15,15 +15,62 @@
     <script src="asteroid.js"></script>
     <script src="main.js"></script>
     <style>
-        * {
+        body,
+        canvas {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 40px;
             margin: 0;
             padding: 0;
+            background-color: rgb(5, 5, 5);
+        }
+
+        #score-display {
+            text-align: center;
+            overflow-y: auto;
+            color: white;
+
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0);
+        }
+
+        #score-display-inner {
+            position: absolute;
+            top: 30%;
+            bottom: 30%;
+            left: 20%;
+            right: 20%;
+            background-color: rgba(50, 50, 50, 1);
+        }
+
+        #score-close-btn {
+            font-size: 30px;
+            font-family: 'Press Start 2P', monospace;
+            background-color: black;
+            color: white;
+            padding: 1rem;
         }
     </style>
 </head>
 
 <body>
-
+    <section id="score-display" hidden>
+        <div id="score-display-inner">
+            <h3>Final Score</h3>
+            <p id="final-score"></p>
+            <!-- <input id="name-input" type="text" placeholder="Enter your name">
+            <h3>High Scores</h3>
+            <dl>
+                <dt>Ben</dt><dd>1200</dd>
+                <dt>Ben</dt><dd>1120</dd>
+                <dt>Myles</dt><dd>981</dd>
+            </dl> -->
+            <button id="score-close-btn">Done</button>
+        </div>
+    </section>
 </body>
 
 </html>
