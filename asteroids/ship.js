@@ -2,7 +2,7 @@ class Ship {
     static get MAX_SPEED() { return 3; } // pixels/frame
     static get SPEED() { return 0.1; } //pixels/frame
     static get TURN_SPEED() { return 0.05; } // about PI/60 radians/frame
-    static get RELOAD_TIME() { return 12; } // frames
+    static get WEAPON_SWITCH_TIME() { return 30; } // frames
     static get INVULNERABLE_TIME() { return 100; } // frames
     static get FULL_SHIELD() { return 100; }
 
@@ -20,10 +20,14 @@ class Ship {
 
         this.isAlive = true;
         this.shields = 100;
-        this.reload = 0;
+        this.score = 0;
         this.invulnerable = 0;
         this.invulnerableColor = color(255, 255, 0);
         this.isGod = false;
+
+        this.weaponIndex = 0;
+        this.weapon = arsenal[this.weaponIndex];
+        this.weaponSwitchWait = Ship.WEAPON_SWITCH_TIME;
 
         /**
          * the ship keeps the list of bullets it fired.
@@ -31,7 +35,6 @@ class Ship {
          */
         this.bullets = [];
 
-        this.score = 0;
     }
 
     /**
@@ -39,6 +42,11 @@ class Ship {
      * @returns {boolean} true if invulnerable
      */
     get isInvulnerable() { return this.invulnerable > 0 || this.isGod; }
+
+    /**
+     * @returns True if the ship can switch weapons.
+     */
+    get canSwitchWeapon() { return this.weaponSwitchWait <= 0; }
 
     /**
      * Reduces ship's shield (life). Controls alive/dead state, as well as 
@@ -67,7 +75,8 @@ class Ship {
         }
 
         // alter reload
-        this.reload--;
+        this.weapon.reduceReload();
+        this.weaponSwitchWait--;
         // alter invulnerability (post hit)
         if (this.isInvulnerable) {
             this.invulnerable--;
@@ -90,13 +99,33 @@ class Ship {
         }
         if (keyIsDown(32)) { // SPACE
             // if 'reload' time ok, fire bullet. else nothing.
-            if (this.reload <= 0) {
+            if (this.weapon.canFire) {
                 // fire
-                let b = new Bullet(this.pos.copy(), this.dir);
-                this.bullets.push(b);
-                this.reload = Ship.RELOAD_TIME;
+                // let b = new Bullet(this.pos.copy(), this.dir);
+                // this.bullets.push(b);
+                // this.reload = Ship.RELOAD_TIME;
+                this.bullets.push(...this.weapon.fire(this));
             }
         }
+        if (this.canSwitchWeapon) {
+            if (keyIsDown(88)) { // X
+                this.weaponIndex++;
+                if (this.weaponIndex >= arsenal.length) {
+                    this.weaponIndex = 0;
+                }
+                this.weapon = arsenal[this.weaponIndex];
+                this.weaponSwitchWait = Ship.WEAPON_SWITCH_TIME;
+            }
+            if (keyIsDown(90)) { // Z
+                this.weaponIndex--;
+                if (this.weaponIndex < 0) {
+                    this.weaponIndex = arsenal.length - 1;
+                }
+                this.weapon = arsenal[this.weaponIndex];
+                this.weaponSwitchWait = Ship.WEAPON_SWITCH_TIME;
+            }
+        }
+
         // apply changes to ship (force, rotation), limit vel
         this.dir += r; // change ship direction
         this.vel.add(p5.Vector.fromAngle(this.dir, f));
@@ -147,52 +176,8 @@ class Ship {
         fill(255);
         text("Shield", 6, 5);
         text(`Score: ${this.score}`, 5, 24);
-        pop();
-    }
-}
+        text(`Weapon: ${this.weapon.name}`, 5, 40);
 
-class Bullet {
-    static get SPEED() { return 10; }//px/frame
-
-    /**
-     * Creates a bullet
-     * @param {p5.Vector} pos screen position
-     * @param {number} dir heading/direction as an angle (radians)
-     */
-    constructor(pos, dir) {
-        this.pos = pos;
-        this.vel = p5.Vector.fromAngle(dir, Bullet.SPEED);
-
-        this.radius = 3;
-        this.col = color(255, 0, 0);
-
-        this.isAlive = true;
-
-        this.power = 1; // damage power
-    }
-
-    /**
-     * Updates the bullet's position using velocity. Kills the bullet
-     * if it leaves the screen.
-     */
-    update() {
-        // move
-        this.pos.add(this.vel);
-
-        // wrap screen
-        if (this.pos.x < 0 || this.pos.x > width) { this.isAlive = false; }
-        if (this.pos.y < 0 || this.pos.y > height) { this.isAlive = false; }
-    }
-
-    /**
-     * Draws the bullet on the screen.
-     */
-    draw() {
-        push();
-        noStroke();
-        fill(this.col);
-        translate(this.pos);
-        ellipse(0, 0, this.radius * 2);
         pop();
     }
 }
