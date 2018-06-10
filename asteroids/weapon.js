@@ -141,5 +141,17 @@ let arsenal = [
             b.col = color(255, 125, 16);
             return [b];
         }
+    ),
+
+    new Weapon(
+        "Omni-blaster", 40, (p, d) => {
+            let bullets = [];
+            for (let i = 0; i < 10; i++) {
+                let b = new Bullet(p.copy(), d + i * TWO_PI / 10);
+                b.col = color(255, 0, 255);
+                bullets.push(b);
+            }
+            return bullets;
+        }
     )
 ];
