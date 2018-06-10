@@ -171,12 +171,12 @@ class Ship {
         rect(5, 5, 100, 20);
         textAlign(LEFT, TOP);
 
-        textFont('monospace');
-        textSize(16);
+        // textFont('monospace');
+        textSize(14);
         fill(255);
-        text("Shield", 6, 5);
-        text(`Score: ${this.score}`, 5, 24);
-        text(`Weapon: ${this.weapon.name}`, 5, 40);
+        text("Shield", 7, 9);//6, 5);
+        text(`Score: ${this.score}`, 7, 30);//5, 24);
+        text(`Weapon: ${this.weapon.name}`, 7, 50); //5, 40);
 
         pop();
     }

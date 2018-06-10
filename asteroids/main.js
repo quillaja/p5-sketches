@@ -1,22 +1,32 @@
 /**
  * @type {Ship}
  */
-var ship;
+let ship;
 /**
  * @type {Asteroid[]}
  */
-var asteroids = [];
+let asteroids = [];
 
 /**
  * @type {number}
  */
-var spawnCounter = 0;
+let spawnCounter = 0;
 const spawnAfter = 180;
+
+let font;
+
+// function preload() {
+//     loadFont("PressStart2P.ttf",
+//         (f) => font = f,
+//         (e) => console.log("error loading font: " + e));
+// }
 
 function setup() {
     createCanvas(windowWidth, windowHeight - 5);
 
     initialize();
+
+    // textFont(font); // can't load using file:// protocol
 }
 
 function initialize() {
