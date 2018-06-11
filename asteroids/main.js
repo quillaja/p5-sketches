@@ -15,18 +15,18 @@ const spawnAfter = 180;
 
 let font;
 
-// function preload() {
-//     loadFont("PressStart2P.ttf",
-//         (f) => font = f,
-//         (e) => console.log("error loading font: " + e));
-// }
+function preload() {
+    loadFont("PressStart2P.ttf",
+        (f) => font = f,
+        (e) => console.log("error loading font: " + e));
+}
 
 function setup() {
     createCanvas(windowWidth, windowHeight - 10);
 
     initialize();
 
-    //textFont(font); // can't load using file:// protocol
+    textFont(font); // can't load using file:// protocol
     // textFont("VT323");
 }
 
@@ -44,6 +44,7 @@ function initialize(restart = false) {
 
     spawnCounter = 0;
     ship = new Ship();
+    if (restart) { ship.isGod = true; }
     asteroids = Asteroid.Generate(1);
 }
 
