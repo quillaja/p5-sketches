@@ -70,7 +70,7 @@ class Ship {
      */
     update() {
         // refill shields every 100 points
-        if (this.score > 0 && this.score % 100 == 0) {
+        if (this.score > 0 && this.score % 100 == 0) { // TODO: bug--get infinite shields if you stay at mod(100)
             this.shields = Ship.FULL_SHIELD;
         }
 
