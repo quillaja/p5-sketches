@@ -11,40 +11,70 @@ let asteroids = [];
  * @type {number}
  */
 let spawnCounter = 0;
-const spawnAfter = 180;
+const spawnAfter = 180; // frames
 
 let font;
-
-function preload() {
-    loadFont("PressStart2P.ttf",
-        (f) => font = f,
-        (e) => console.log("error loading font: " + e));
-}
 
 function setup() {
     createCanvas(windowWidth, windowHeight - 10);
 
     initialize();
 
-    textFont(font); // can't load using file:// protocol
-    // textFont("VT323");
+    // can't xss load using file:// protocol
+    loadFont("PressStart2P.ttf",
+        (f) => textFont(f),
+        (e) => { textFont("VT323"); console.log("error with 'Press Start 2P': " + e); });
 }
 
 function initialize(restart = false) {
     if (restart) {
         let display = document.getElementById("score-display");
-        display.hidden = false;
+        let playerScore = ship.score; // so the score can be captured by the anon funcs below
+
         document.getElementById("score-close-btn").onclick = () => {
             display.hidden = true;
+            let nameInput = document.getElementById("name-input");
+            if (nameInput != null) {
+                let name = String(nameInput.value);
+                // console.log(name);
+                if (name.length > 0) {
+                    getByKey(API_KEY, "scores").then(scores => {
+                        scores.push({ "name": name, "score": playerScore });
+                        scores = scores.sort((a, b) => b.score - a.score).slice(0, 9);
+                        putByKey(API_KEY, "scores", scores)
+                            .then(/*v => console.log(v)*/)
+                            .catch(e => console.log("didn't write scores: " + e));
+                    });
+                }
+            }
             initialize();
         };
 
+        getByKey(API_KEY, "scores").then((scores) => {
+
+            const ynh = `TEXTBOX${random(100)}`;
+            scores.push({ "name": ynh, "score": playerScore });
+            let top10 = scores.sort((a, b) => b.score - a.score).slice(0, 9); // asc sort
+            let innerhtml = "";
+            for (const s of top10) {
+                if (s.name == ynh) {
+                    innerhtml += `<div class="score"><input id="name-input" class="score-name" type="text" placeholder="Enter your name"><div class="score-number">${s.score}</div></div>`;
+                } else {
+                    innerhtml += `<div class="score"><div class="score-name">${s.name}</div><div class="score-number">${s.score}</div></div>`;
+                }
+            }
+            let scoreList = document.getElementById("score-display-list");
+            scoreList.innerHTML = innerhtml;
+            scoreList.hidden = false;
+        });
+
+        display.hidden = false;
         document.getElementById("final-score").innerText = ship.score.toString();
     }
 
     spawnCounter = 0;
-    ship = new Ship();
-    if (restart) { ship.isGod = true; }
+    if (restart) { ship.isGod = true; ship.isAlive = true; ship.shields = 0; }
+    else { ship = new Ship(); }
     asteroids = Asteroid.Generate(1);
 }
 
@@ -109,10 +139,10 @@ function draw() {
     if (spawnCounter >= spawnAfter) {
         asteroids.push(...Asteroid.Generate(1));
         spawnCounter = 0;
-        console.log(
-            ceil(frameRate()),
-            asteroids.length,
-            maxCollisionTests);
+        // console.log(
+        //     ceil(frameRate()),
+        //     asteroids.length,
+        //     maxCollisionTests);
     }
 
     // check ship state. restart game if it's dead
