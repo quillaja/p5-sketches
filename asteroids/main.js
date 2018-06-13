@@ -29,10 +29,12 @@ function setup() {
 function initialize(restart = false) {
     if (restart) {
         let display = document.getElementById("score-display");
+        let scoreList = document.getElementById("score-display-list");
         let playerScore = ship.score; // so the score can be captured by the anon funcs below
 
         document.getElementById("score-close-btn").onclick = () => {
             display.hidden = true;
+            scoreList.innerHTML = "";
             let nameInput = document.getElementById("name-input");
             if (nameInput != null) {
                 let name = String(nameInput.value);
@@ -63,7 +65,6 @@ function initialize(restart = false) {
                     innerhtml += `<div class="score"><div class="score-name">${s.name}</div><div class="score-number">${s.score}</div></div>`;
                 }
             }
-            let scoreList = document.getElementById("score-display-list");
             scoreList.innerHTML = innerhtml;
             scoreList.hidden = false;
         });

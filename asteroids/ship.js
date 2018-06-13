@@ -5,6 +5,7 @@ class Ship {
     static get WEAPON_SWITCH_TIME() { return 30; } // frames
     static get INVULNERABLE_TIME() { return 100; } // frames
     static get FULL_SHIELD() { return 100; }
+    static get SHIELD_REFILL_SCORE() { return 100; }
 
     /**
      * Creates a ship.
@@ -13,7 +14,6 @@ class Ship {
         this.pos = createVector(width / 2, height / 2);
         this.vel = createVector(0, 0);
         this.dir = 0;
-
         this.radius = 10;
 
         this.col = color(255);
@@ -21,6 +21,7 @@ class Ship {
         this.isAlive = true;
         this.shields = 100;
         this.score = 0;
+        this.prevScore = 0;
         this.invulnerable = 0;
         this.invulnerableColor = color(255, 255, 0);
         this.isGod = false;
@@ -28,6 +29,9 @@ class Ship {
         this.weaponIndex = 0;
         this.weapon = arsenal[this.weaponIndex];
         this.weaponSwitchWait = Ship.WEAPON_SWITCH_TIME;
+        // TODO: change weapons to a list of indicies into "arsenal" which
+        // indicate which weapons the ship can access. then weaponIndex is the
+        // index into this list of indicies.
 
         /**
          * the ship keeps the list of bullets it fired.
@@ -70,8 +74,9 @@ class Ship {
      */
     update() {
         // refill shields every 100 points
-        if (this.score > 0 && this.score % 100 == 0) { // TODO: bug--get infinite shields if you stay at mod(100)
+        if (this.score - this.prevScore >= Ship.SHIELD_REFILL_SCORE) {
             this.shields = Ship.FULL_SHIELD;
+            this.prevScore = this.score;
         }
 
         // alter reload
@@ -101,9 +106,6 @@ class Ship {
             // if 'reload' time ok, fire bullet. else nothing.
             if (this.weapon.canFire) {
                 // fire
-                // let b = new Bullet(this.pos.copy(), this.dir);
-                // this.bullets.push(b);
-                // this.reload = Ship.RELOAD_TIME;
                 this.bullets.push(...this.weapon.fire(this));
             }
         }

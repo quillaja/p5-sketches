@@ -26,7 +26,7 @@ class Bullet {
         // move
         this.pos.add(this.vel);
 
-        // wrap screen
+        // deal with screen edges
         if (this.pos.x < 0 || this.pos.x > width) { this.isAlive = false; }
         if (this.pos.y < 0 || this.pos.y > height) { this.isAlive = false; }
     }

@@ -19,7 +19,7 @@ async function putByKey(apiKey, key, value) {
         });
         if (resp.ok) {
             let data = await resp.json();
-            return data
+            return data;
         } else {
             throw new Error("putByKey() response not ok. " + resp.status);
         }
