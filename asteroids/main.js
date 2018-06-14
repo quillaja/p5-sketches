@@ -28,6 +28,7 @@ function setup() {
 
 function initialize(restart = false) {
     if (restart) {
+        const topN = 10;
         let display = document.getElementById("score-display");
         let scoreList = document.getElementById("score-display-list");
         let playerScore = ship.score; // so the score can be captured by the anon funcs below
@@ -41,7 +42,7 @@ function initialize(restart = false) {
                 if (name.length > 0) {
                     getByKey(API_KEY, "scores").then(scores => {
                         scores.push({ "name": name, "score": playerScore });
-                        scores = scores.sort((a, b) => b.score - a.score).slice(0, 10);
+                        scores = scores.sort((a, b) => b.score - a.score).slice(0, topN);
                         putByKey(API_KEY, "scores", scores)
                             .then(/*v => console.log(v)*/)
                             .catch(e => console.log("didn't write scores: " + e));
@@ -55,7 +56,7 @@ function initialize(restart = false) {
 
             const ynh = `TEXTBOX${random(100)}`;
             scores.push({ "name": ynh, "score": playerScore });
-            let top10 = scores.sort((a, b) => b.score - a.score).slice(0, 9); // asc sort
+            let top10 = scores.sort((a, b) => b.score - a.score).slice(0, topN); // asc sort
             let innerhtml = "";
             for (const s of top10) {
                 if (s.name == ynh) {
