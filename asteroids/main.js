@@ -34,15 +34,14 @@ function initialize(restart = false) {
 
         document.getElementById("score-close-btn").onclick = () => {
             display.hidden = true;
-            scoreList.innerHTML = "";
             let nameInput = document.getElementById("name-input");
             if (nameInput != null) {
-                let name = String(nameInput.value);
-                // console.log(name);
+                let name = String(nameInput.value).trim();
+                scoreList.innerHTML = ""; // remove all the now-obsolete html of the score display
                 if (name.length > 0) {
                     getByKey(API_KEY, "scores").then(scores => {
                         scores.push({ "name": name, "score": playerScore });
-                        scores = scores.sort((a, b) => b.score - a.score).slice(0, 9);
+                        scores = scores.sort((a, b) => b.score - a.score).slice(0, 10);
                         putByKey(API_KEY, "scores", scores)
                             .then(/*v => console.log(v)*/)
                             .catch(e => console.log("didn't write scores: " + e));
