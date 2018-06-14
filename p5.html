@@ -7,8 +7,32 @@
     <title>p5 Projects</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
+        body {
+            font-family: sans-serif;
+        }
+
         img {
-            width: 300px;
+            width: 100%;
+            min-width: 300px;
+        }
+
+        .project-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(22.75rem, 1fr));
+            justify-content: space-evenly;
+        }
+
+        .project {
+            padding: 1rem;
+            margin: 1rem;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            transition-property: background-color;
+            transition-duration: 200ms;
+        }
+
+        .project:hover {
+            background-color: #dddddd;
         }
     </style>
 </head>
@@ -16,66 +40,94 @@
 <body>
     <h1>p5.js Projects</h1>
 
-    <h3>Boids</h3>
-    <p>Flocking behavior simulation of classic "boids".</p>
-    <p>
-        <a href="boids/sketch.html">Click to run</a>
-    </p>
-    <p>
-        <a href="boids/">Project Folder</a>
-    </p>
-    <img src="boids/boids.png" alt="">
+    <div class="project-container">
+        <section class="project">
+            <h3>Asteroids</h3>
+            <p>A version of the classic game. Controls are Up, Left, and Right arrows and spacebar. Your ship gets temporary
+                invulnerability after being hit (indicicated by turning yellow). Every 100 points refills your shield.
+            </p>
+            <p>
+                <a href="asteroids/sketch.html">Click to run</a>
+            </p>
+            <p>
+                <a href="asteroids/">Project Folder</a>
+            </p>
+            <img src="asteroids/asteroids.png" alt="">
+        </section>
 
-    <h3>Snakes</h3>
-    <p>Inverse kinematics and seeking behavior to make 'snakes' that grow.</p>
-    <p>
-        <a href="snakes/sketch.html">Click to run</a>
-    </p>
-    <p>
-        <a href="snakes/">Project Folder</a>
-    </p>
-    <img src="snakes/snakes.png" alt="">
+        <section class="project">
+            <h3>Boids</h3>
+            <p>Flocking behavior simulation of classic "boids".</p>
+            <p>
+                <a href="boids/sketch.html">Click to run</a>
+            </p>
+            <p>
+                <a href="boids/">Project Folder</a>
+            </p>
+            <img src="boids/boids.png" alt="">
+        </section>
 
-    <h3>Circle Packing</h3>
-    <p>Circle packing sketch based on a
-        <a href="http://www.paulbourke.net/papers/cgat2013/paper.pdf" target="_blank">paper</a> by Paul Bourke.</p>
-    <p>
-        <a href="circ_pack/sketch.html">Click to run</a>
-    </p>
-    <p>
-        <a href="circ_pack/">Project Folder</a>
-    </p>
-    <img src="circ_pack/circle_pack.png" alt="">
+        <section class="project">
+            <h3>Snakes</h3>
+            <p>Inverse kinematics and seeking behavior to make 'snakes' that grow.</p>
+            <p>
+                <a href="snakes/sketch.html">Click to run</a>
+            </p>
+            <p>
+                <a href="snakes/">Project Folder</a>
+            </p>
+            <img src="snakes/snakes.png" alt="">
+        </section>
 
-    <h3>Circles</h3>
-    <p>Circles that move around using Perlin noise and change colors when they intersect.</p>
-    <p>
-        <a href="circles/sketch.html">Click to run</a>
-    </p>
-    <p>
-        <a href="circles/">Project Folder</a>
-    </p>
-    <img src="circles/circles.png" alt="">
+        <section class="project">
+            <h3>Circle Packing</h3>
+            <p>Circle packing sketch based on a
+                <a href="http://www.paulbourke.net/papers/cgat2013/paper.pdf" target="_blank">paper</a> by Paul Bourke.</p>
+            <p>
+                <a href="circ_pack/sketch.html">Click to run</a>
+            </p>
+            <p>
+                <a href="circ_pack/">Project Folder</a>
+            </p>
+            <img src="circ_pack/circle_pack.png" alt="">
+        </section>
 
-    <h3>QuadTree</h3>
-    <p>A space partitioning tree structure that is used to improve performance of range searches, etc.</p>
-    <p>
-        <a href="quadtree/sketch.html">Click to run</a>
-    </p>
-    <p>
-        <a href="quadtree/">Project Folder</a>
-    </p>
-    <img src="quadtree/quadtree.png" alt="">
+        <section class="project">
+            <h3>Circles</h3>
+            <p>Circles that move around using Perlin noise and change colors when they intersect.</p>
+            <p>
+                <a href="circles/sketch.html">Click to run</a>
+            </p>
+            <p>
+                <a href="circles/">Project Folder</a>
+            </p>
+            <img src="circles/circles.png" alt="">
+        </section>
 
-    <h3>Photo</h3>
-    <p>Slowly reveals a random image by painting blotchy randomly colored circles.</p>
-    <p>
-        <a href="photo/sketch.html">Click to run</a>
-    </p>
-    <p>
-        <a href="photo/">Project Folder</a>
-    </p>
-    <img src="photo/photo.png" alt="">
+        <section class="project">
+            <h3>QuadTree</h3>
+            <p>A space partitioning tree structure that is used to improve performance of range searches, etc.</p>
+            <p>
+                <a href="quadtree/sketch.html">Click to run</a>
+            </p>
+            <p>
+                <a href="quadtree/">Project Folder</a>
+            </p>
+            <img src="quadtree/quadtree.png" alt="">
+        </section>
+
+        <section class="project">
+            <h3>Photo</h3>
+            <p>Slowly reveals a random image by painting blotchy randomly colored circles.</p>
+            <p>
+                <a href="photo/sketch.html">Click to run</a>
+            </p>
+            <p>
+                <a href="photo/">Project Folder</a>
+            </p>
+            <img src="photo/photo.png" alt="">
+        </section>
+    </div>
 </body>
 
 </html>
