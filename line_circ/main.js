@@ -421,21 +421,23 @@ class Polygon {
         // do the work, then set the property
         let v = [this.verts[this.verts.length - 1], ...this.verts, this.verts[0]];
         // console.log(v);
+        let dots = [];
         for (let i = 1; i < v.length - 1; i++) {
             let to = p5.Vector.sub(v[i], v[i - 1]);
             let from = p5.Vector.sub(v[i + 1], v[i]);
             let toNormal = p5.Vector.cross(createVector(0, 0, 1), to);
             let dot = toNormal.dot(from);
             // console.log("dot: " + dot + " to, toNorm, from ", to, toNormal, from);
-            if (dot < 0) {
-                this._isConvex = false;
-                // console.log("dot < 0");
-                return false;
-            }
+            dots.push(dot);
+            // if (dot < 0) {
+            //     this._isConvex = false;
+            //     // console.log("dot < 0");
+            //     return false;
+            // }
         }
 
-        this._isConvex = true;
-        return true;
+        this._isConvex = dots.every(d => d > 0) || dots.every(d => d < 0);
+        return this._isConvex;
     }
 
     /**
