@@ -1,6 +1,8 @@
 let lines;
 let c;
 let shapes;
+let v = [];
+let p;
 
 function setup() {
     createCanvas(800, 800);
@@ -31,7 +33,7 @@ function setup() {
             random(0, PI))
     ];
 
-    noLoop();
+    // noLoop();
 }
 
 function draw() {
@@ -79,20 +81,36 @@ function draw() {
 
     // c.draw(col);
 
-    let v = [];
-    let n = floor(random(3, 20));
-    for (let i = 0; i < n; i++) {
-        v.push(p5.Vector.fromAngle(i * TWO_PI / n, random(200, 400)));
-    }
-    let p = new Polygon(v);
+    // let n = floor(random(3, 20));
+    // let sum = 0;
+    // let xoff = random(100);
+    // while (sum < TWO_PI && v.length < 100) {
+    //     v.push(p5.Vector.fromAngle(sum, random(100, 350)));
+    //     sum += PI / 12 * (noise(xoff) * 2 - 1)
+    //     xoff += 0.1;
+    // }
+    if (v.length > 0) {
+        p = new Polygon(v);
 
-    translate(width / 2, height / 2);
-    p.draw('white');
-    if (p.isConvex()) {
-        p.draw('green');
-    } else {
-        p.draw('red');
+        translate(width / 2, height / 2);
+        p.draw('white');
+        if (p.isConvex()) {
+            p.draw('green');
+        } else {
+            p.draw('red');
+        }
+        p.verts.forEach(v => line(p.center.x, p.center.y, v.x, v.y));
     }
+}
+
+function mousePressed() {
+    if (mouseButton == LEFT) {
+        v.push(createVector(mouseX - width / 2, mouseY - height / 2));
+    }
+    if (mouseButton == RIGHT) {
+        v.pop();
+    }
+    return false;
 }
 
 function keyPressed() {
@@ -418,6 +436,27 @@ class Polygon {
 
         this._isConvex = true;
         return true;
+    }
+
+    /**
+     * Calculates the area of any convex or concave **simple** polygon 
+     * (ie the edges cannot intersect).
+     * @returns {number} the area.
+     */
+    area() {
+        if (this.hasOwnProperty('_area') && this._area != undefined) {
+            return this._area;
+        }
+
+        let sum = 0;
+        let v = this.verts.slice()
+        v.push(this.verts[0]);
+        for (let i = 0; i < v.length - 1; i++) {
+            sum += (v[i + 1].x + v[i].x) * (v[i + 1].y - v[i].y);
+        }
+
+        this._area = 0.5 * abs(sum);
+        return this._area;
     }
 
     static Rect(xcenter, ycenter, width, height, angle) {
