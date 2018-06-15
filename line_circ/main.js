@@ -60,6 +60,13 @@ function draw() {
         // }
     }
 
+    for (const t of [shapes[1], shapes[2]]) {
+        t.draw(color(255));
+        if (pointTriange(createVector(mouseX, mouseY), t.verts)) {
+            // console.log("mouse interected a triangle");
+            t.draw(color(0, 255, 0));
+        }
+    }
 
     // for (const p of shapes) {
     //     if (polygonCircle(p, c)) {
@@ -70,6 +77,33 @@ function draw() {
     // }
 
     c.draw(col);
+}
+
+/**
+ * Intersect a point and a triangle.
+ * @param {p5.Vector} pt the point (as a vector)
+ * @param {p5.Vector[]} tri an array of 3 vectors representing verticies.
+ */
+function pointTriange(pt, tri) {
+    tri = tri.slice();
+    tri.push(tri[0]); // make easier to deal with 'wrapping' back to first point
+    let crosses = [];
+    for (let i = 0; i < tri.length - 1; i++) {
+        crosses.push(
+            p5.Vector.cross(
+                p5.Vector.sub(tri[i + 1], tri[i]),
+                p5.Vector.sub(tri[i], pt)
+            )
+        );
+    }
+
+    // check that cross products are either all positive or all negative.
+    // do both to account for opposite "winding" directions.
+    // P5 seems to use right-handed rule and 'downward' +Y axis, so +Z
+    // is 'into' screen. Thus:
+    // if CW winding, cross products are all positive,
+    // CCW winding are all negative (?)
+    return crosses.every(v => v.z >= 0) || crosses.every(v => v.z <= 0);
 }
 
 /**
