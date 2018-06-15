@@ -31,52 +31,74 @@ function setup() {
             random(0, PI))
     ];
 
+    noLoop();
 }
 
 function draw() {
     background(50);
-    c.moveTo(mouseX, mouseY);
+    // c.moveTo(mouseX, mouseY);
 
-    let col = color(255);
-    for (const l of lines) {
-        // let [does, pos, pc] = lineCircle(l, c);
-        let [does, pos] = lineLine(c, l);
-        // let [does, pos] = pointLine(createVector(mouseX, mouseY), l);
-        if (does) {
-            col = color(255, 0, 0);
-        }
-        l.draw(color(255));
-        if (pos) {
-            noStroke();
-            fill(0, 255, 0);
-            ellipse(pos.x, pos.y, 4);
-        }
-        // if (pc) {
-        //     for (const p of pc) {
-        //         noStroke();
-        //         fill(0, 255, 255);
-        //         ellipse(p.x, p.y, 5);
-        //     }
-        // }
-    }
+    // let col = color(255);
+    // for (const l of lines) {
+    //     // let [does, pos, pc] = lineCircle(l, c);
+    //     let [does, pos] = lineLine(c, l);
+    //     // let [does, pos] = pointLine(createVector(mouseX, mouseY), l);
+    //     if (does) {
+    //         col = color(255, 0, 0);
+    //     }
+    //     l.draw(color(255));
+    //     if (pos) {
+    //         noStroke();
+    //         fill(0, 255, 0);
+    //         ellipse(pos.x, pos.y, 4);
+    //     }
+    //     // if (pc) {
+    //     //     for (const p of pc) {
+    //     //         noStroke();
+    //     //         fill(0, 255, 255);
+    //     //         ellipse(p.x, p.y, 5);
+    //     //     }
+    //     // }
+    // }
 
-    for (const t of [shapes[1], shapes[2]]) {
-        t.draw(color(255));
-        if (pointTriange(createVector(mouseX, mouseY), t.verts)) {
-            // console.log("mouse interected a triangle");
-            t.draw(color(0, 255, 0));
-        }
-    }
-
-    // for (const p of shapes) {
-    //     if (polygonCircle(p, c)) {
-    //         p.draw(color(random(255), random(255), random(255)));
-    //     } else {
-    //         p.draw(color(255));
+    // for (const t of [shapes[1], shapes[2]]) {
+    //     t.draw(color(255));
+    //     if (pointTriange(createVector(mouseX, mouseY), t.verts)) {
+    //         // console.log("mouse interected a triangle");
+    //         t.draw(color(0, 255, 0));
     //     }
     // }
 
-    c.draw(col);
+    // // for (const p of shapes) {
+    // //     if (polygonCircle(p, c)) {
+    // //         p.draw(color(random(255), random(255), random(255)));
+    // //     } else {
+    // //         p.draw(color(255));
+    // //     }
+    // // }
+
+    // c.draw(col);
+
+    let v = [];
+    let n = floor(random(3, 20));
+    for (let i = 0; i < n; i++) {
+        v.push(p5.Vector.fromAngle(i * TWO_PI / n, random(200, 400)));
+    }
+    let p = new Polygon(v);
+
+    translate(width / 2, height / 2);
+    p.draw('white');
+    if (p.isConvex()) {
+        p.draw('green');
+    } else {
+        p.draw('red');
+    }
+}
+
+function keyPressed() {
+    if (keyCode == ENTER) {
+        redraw();
+    }
 }
 
 /**
@@ -366,6 +388,36 @@ class Polygon {
         stroke(color);
         point(this.center.x, this.center.y);
         pop();
+    }
+
+    /**
+     * @returns {boolean} true if the polygon is convex. false otherwise.
+     */
+    isConvex() {
+
+        // property is already set, don't need to do the work again.
+        if (this.hasOwnProperty('_isConvex') && this._isConvex != undefined) {
+            return this._isConvex;
+        }
+
+        // do the work, then set the property
+        let v = [this.verts[this.verts.length - 1], ...this.verts, this.verts[0]];
+        // console.log(v);
+        for (let i = 1; i < v.length - 1; i++) {
+            let to = p5.Vector.sub(v[i], v[i - 1]);
+            let from = p5.Vector.sub(v[i + 1], v[i]);
+            let toNormal = p5.Vector.cross(createVector(0, 0, 1), to);
+            let dot = toNormal.dot(from);
+            // console.log("dot: " + dot + " to, toNorm, from ", to, toNormal, from);
+            if (dot < 0) {
+                this._isConvex = false;
+                // console.log("dot < 0");
+                return false;
+            }
+        }
+
+        this._isConvex = true;
+        return true;
     }
 
     static Rect(xcenter, ycenter, width, height, angle) {
