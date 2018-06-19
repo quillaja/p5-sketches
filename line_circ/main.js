@@ -99,7 +99,14 @@ function draw() {
         } else {
             p.draw('red');
         }
+        if (pointTriangle(createVector(mouseX - width / 2, mouseY - height / 2), p.verts)) {
+            // mouse is in polygon
+            p.draw('orange');
+        }
         p.verts.forEach(v => line(p.center.x, p.center.y, v.x, v.y));
+        let cent = p.centroid();
+        fill('white');
+        ellipse(cent.x, cent.y, 4);
     }
 }
 
@@ -124,7 +131,7 @@ function keyPressed() {
  * @param {p5.Vector} pt the point (as a vector)
  * @param {p5.Vector[]} tri an array of 3 vectors representing verticies.
  */
-function pointTriange(pt, tri) {
+function pointTriangle(pt, tri) {
     tri = tri.slice();
     tri.push(tri[0]); // make easier to deal with 'wrapping' back to first point
     let crosses = [];
@@ -454,11 +461,31 @@ class Polygon {
         let v = this.verts.slice()
         v.push(this.verts[0]);
         for (let i = 0; i < v.length - 1; i++) {
-            sum += (v[i + 1].x + v[i].x) * (v[i + 1].y - v[i].y);
+            sum += (v[i].x * v[i + 1].y) - (v[i + 1].x * v[i].y);
         }
 
         this._area = 0.5 * abs(sum);
         return this._area;
+    }
+
+    /**
+     * @returns {p5.Vector} centroid
+     */
+    centroid() {
+        let sum = createVector(0, 0);
+        let v = this.verts.slice();
+        v.push(this.verts[0]);
+        for (let i = 0; i < v.length - 1; i++) {
+            let a = (v[i].x * v[i + 1].y) - (v[i + 1].x * v[i].y);
+            sum.x += (v[i].x + v[i + 1].x) * a;
+            sum.y += (v[i].y + v[i + 1].y) * a;
+        }
+
+        if (this.area() == 0) {
+            return this.center.copy();
+        }
+
+        return sum.mult(1 / (6 * this.area()));
     }
 
     static Rect(xcenter, ycenter, width, height, angle) {
