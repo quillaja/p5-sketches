@@ -8311,7 +8311,7 @@ declare namespace p5 {
      *   @param v2 the second p5.Vector
      *   @return the cross product
      */
-    static cross(v1: p5.Vector, v2: p5.Vector): number
+    static cross(v1: p5.Vector, v2: p5.Vector): p5.Vector
     
     /**
      *   Calculates the Euclidean distance between two 
