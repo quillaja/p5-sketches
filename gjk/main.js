@@ -104,6 +104,17 @@ window.draw = function () {
     fill(255);
     if (states[stateIndex] != null) {
         let s = states[stateIndex];
+
+        push();
+        stroke(64);
+        noFill();
+        beginShape();
+        for (let i = 0; i < s.s.length; i++) {
+            vertex(s.s[i][0], s.s[i][1]);
+        }
+        endShape(CLOSE);
+        pop();
+
         if (s.intersection) {
             stroke('green');
         } else {
@@ -112,7 +123,7 @@ window.draw = function () {
         drawPoints(s.s);
         line(0, 0, s.dir[0] * 50, s.dir[1] * 50);
 
-        if (s.extras != undefined) {
+        if (s.extras != undefined && keyIsDown(86)) { //86=v
             push();
             stroke('pink');
             line(0, 0, s.extras.normalAB[0] * 25, s.extras.normalAB[1] * 25);
