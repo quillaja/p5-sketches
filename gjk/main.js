@@ -39,6 +39,30 @@ let triRot = mat2d.create();
  */
 let circ = [vec2.fromValues(0, 0), 100];
 
+// STATE CRAP ////////////////////////////////////////////
+/**@type {State[]}*/
+let states = [];
+
+let stateIndex = 0;
+
+/**
+ * 
+ * @param {v2} startingSearchDir 
+ */
+function resetStates(startingSearchDir = undefined) {
+    let s = new State();
+    if (startingSearchDir != undefined) {
+        vec2.copy(s.dir, startingSearchDir);
+    }
+    states = [s];
+    stateIndex = 0;
+    window.states = states;
+}
+
+////////////////////////////////////////////////////////////
+
+
+
 window.setup = function () {
     createCanvas(windowWidth, windowHeight - 10);
     // v = vec2.fromValues(50, 50);
@@ -49,16 +73,10 @@ window.setup = function () {
         let v = p5.Vector.fromAngle(i * TWO_PI / 16, 100);
         circ.push(vec2.fromValues(v.x, v.y));
     }
+
+    states.push(new State());
 }
 
-// STATE CRAP ////////////////////////////////////////////
-/**@type {State[]}*/
-let states = [];
-
-let stateIndex = 0;
-
-window.states = states;
-////////////////////////////////////////////////////////////
 
 
 window.draw = function () {
@@ -189,6 +207,8 @@ window.keyPressed = function () {
             vec2.transformMat2d(triW[i], triM[i], triRot);
             vec2.transformMat2d(triW[i], triW[i], triTrans);
         }
+
+        resetStates();
     }
 
     // state controls
@@ -323,7 +343,10 @@ function gjk2(shapeA, shapeB, state) {
     switch (state.s.length) {
         case 0: // initialize
             {
-                vec2.set(state.dir, 1, 1); // "random" direction to start
+                if (state.dir == null || state.dir == undefined ||
+                    vec2.equals(state.dir, origin)) {
+                    vec2.set(state.dir, 1, 1); // "random" direction to start
+                }
                 let a = support(shapeA, shapeB, state.dir);
 
                 // evaluate new point
@@ -370,6 +393,11 @@ function gjk2(shapeA, shapeB, state) {
                 nextState.s.push(...state.s); // copy previous simplex to next state
                 nextState.s.push(a); // new simplex is triangle
 
+                // evaluate new point
+                if (vec2.equals(a, origin)) { // a is ON the origin
+                    nextState.intersection = true;
+                    return nextState;
+                }
                 let adotdir = vec2.dot(a, state.dir);
                 if (adotdir < 0) { // a did not reach origin
                     nextState.intersection = false;
@@ -394,6 +422,14 @@ function gjk2(shapeA, shapeB, state) {
                     ao: ao,
                     abDOTao: abDOTao,
                     acDOTao: acDOTao,
+                }
+
+                if (ab[0] * ao[1] - ab[1] * ao[0] == 0 ||
+                    ac[0] * ao[1] - ac[1] * ao[0] == 0) { // find more 'elegant' method?
+                    // if ABxAO or ABxAO is 0 then
+                    // origin is ON one of the lines AB or AC
+                    nextState.intersection = true;
+                    return nextState;
                 }
 
                 if (abDOTao < 0 && acDOTao < 0) {
@@ -433,8 +469,8 @@ function gjk2(shapeA, shapeB, state) {
         // skip... for 3D
     }
 
-    console.log("SHOULDN'T HAVE GOT HERE");
-    return state; // return copy of current state
+    console.log("YOU SHOULDN'T BE HERE, JIMLA!");
+    return null; // JIM LAW
 }
 
 function setNextSearchDirectionFromPoint(simplex, nextDir) {
