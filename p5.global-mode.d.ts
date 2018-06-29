@@ -728,7 +728,7 @@ declare function noStroke(): p5;
  *   current color range
  *   @chainable
  */
-declare function stroke(v1: number, v2: number, v3: number, alpha?: number): p5;
+declare function stroke(v1: number, v2?: number, v3?: number, alpha?: number): p5;
 
 /**
  *   Sets the color used to draw lines and borders 
