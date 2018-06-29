@@ -14,7 +14,7 @@ import { EPSILON } from "./gl-matrix-2.4.0/src/gl-matrix/common.js";
  * @type {VertArray}
  */
 let triM = [
-    new Float32Array([200, 0]),
+    // new Float32Array([200, 0]),
     new Float32Array([0, 100]),
     // new Float32Array([-50, 0]),
     new Float32Array([0, -100]),
@@ -24,7 +24,7 @@ let triM = [
  * @type {VertArray}
  */
 let triW = [
-    new Float32Array([200, 0]),
+    // new Float32Array([200, 0]),
     new Float32Array([0, 100]),
     // new Float32Array([-50, 0]),
     new Float32Array([0, -100]),
@@ -40,6 +40,22 @@ let triRot = mat2d.create();
 let circ = [vec2.fromValues(0, 0), 100];
 
 // STATE CRAP ////////////////////////////////////////////
+
+class State {
+    constructor() {
+        /**@type {v2} */
+        this.dir = vec2.fromValues(0, 0);
+        /**@type {VertArray} */
+        this.s = [];
+
+        this.iterations = 0;
+        this.intersection = undefined;
+        // this.AdotDirWasLTZero = false;
+
+        this.extras = undefined;
+    }
+}
+
 /**@type {State[]}*/
 let states = [];
 
@@ -62,28 +78,32 @@ function resetStates(startingSearchDir = undefined) {
 ////////////////////////////////////////////////////////////
 
 
-
+/**p5 setup() function */
 window.setup = function () {
     createCanvas(windowWidth, windowHeight - 10);
     // v = vec2.fromValues(50, 50);
     // frameRate(5);
 
+    // make n-gon
     circ = [];
-    for (let i = 0; i < 16; i++) {
-        let v = p5.Vector.fromAngle(i * TWO_PI / 16, 100);
+    const n = 2;
+    for (let i = 0; i < n; i++) {
+        let v = p5.Vector.fromAngle(i * TWO_PI / n, 100);
         circ.push(vec2.fromValues(v.x, v.y));
     }
 
-    states.push(new State());
+    resetStates();
 }
 
 
-
+/** p5 draw() function */
 window.draw = function () {
     background(50);
 
     translate(width / 2, height / 2);
     // scale(1, -1);
+
+    // axes
     stroke('blue');
     line(0, 0, 10, 0);
     stroke('yellow');
@@ -92,16 +112,18 @@ window.draw = function () {
 
 
 
-    // draw
+    // draw //////
     noFill();
-    beginShape();
+
     //triangle
+    beginShape();
     for (let i = 0; i < triW.length; i++) {
         vertex(triW[i][0], triW[i][1]);
     }
     endShape(CLOSE);
 
-    //circle
+    //circle (or whatever)
+    // ellipse(0, 0, 2 * circ[1]); // draw circle
     beginShape();
     for (let i = 0; i < circ.length; i++) {
         vertex(circ[i][0], circ[i][1]);
@@ -113,12 +135,11 @@ window.draw = function () {
     let f = farthestP(triW, m);
     ellipse(f[0], f[1], 5);
 
-    // ellipse(0, 0, 2 * circ[1]); // draw circle
     // f = farthestC(circ[0], circ[1], m);
     f = farthestP(circ, m);
     ellipse(f[0], f[1], 5);
 
-    // gjk(triW, circ);
+    // draw GJK states
     fill(255);
     if (states[stateIndex] != null) {
         let s = states[stateIndex];
@@ -133,10 +154,9 @@ window.draw = function () {
         endShape(CLOSE);
         pop();
 
+        stroke('red');
         if (s.intersection) {
             stroke('green');
-        } else {
-            stroke('red');
         }
         drawPoints(s.s);
         line(0, 0, s.dir[0] * 50, s.dir[1] * 50);
@@ -172,6 +192,7 @@ window.draw = function () {
     line(0, 0, m[0], m[1]);
 }
 
+/** p5 keyPressed() function */
 window.keyPressed = function () {
     const speed = 10;
     const rot = PI / 16;
@@ -214,7 +235,7 @@ window.keyPressed = function () {
     // state controls
 
     if (keyCode == 32) { //space
-        let nextState = gjk2(triW, circ, states[states.length - 1]);
+        let nextState = gjkStateMachine(triW, circ, states[states.length - 1]);
         if (nextState.intersection == true) {
             console.log("INTERSECTION");
         }
@@ -239,6 +260,33 @@ window.keyPressed = function () {
         }
     }
 }
+
+const labels = ["C", "B", "A"];
+/**
+ * draws and labels points in "s"
+ * @param {v2[]} s 
+ * @param {number} times 
+ */
+function drawPoints(s, times = 0) {
+    let nstr = "";
+    if (times != 0) {
+        nstr = times.toString() + "|";
+    }
+    let loff = 3 - s.length;
+    for (let i = 0; i < s.length; i++) {
+        ellipse(s[i][0], s[i][1], 5);
+
+        // crappy way to make text appear correct
+        push();
+        translate(s[i][0], s[i][1])
+        // scale(1, -1);
+        text(labels[i + loff] + nstr, times * 18, 0);
+        pop();
+    }
+}
+
+
+//// "SUPPORT" FUNCTIONS ////////////////////////////////////////
 
 /**
  * returns farthest vertext in given direction
@@ -275,7 +323,8 @@ function farthestC(center, radius, dir) {
 }
 
 /**
- * 
+ * figures out what a and b are and uses appropriate support functions to
+ * return the "support" point of "A-B" (minkowski difference).
  * @param {VertArray|Array} a 
  * @param {VertArray|Array} b 
  * @param {v2} dir
@@ -309,31 +358,18 @@ function support(a, b, dir) {
     return vec2.sub(farA, farA, farB);
 }
 
-class State {
-    constructor() {
-        /**@type {v2} */
-        this.dir = vec2.fromValues(0, 0);
-        /**@type {VertArray} */
-        this.s = [];
 
-        this.iterations = 0;
-        this.intersection = undefined;
-        // this.AdotDirWasLTZero = false;
 
-        this.extras = undefined;
-    }
-}
-
-/**@type {v2} */
-const origin = vec2.create();
 
 /**
+ * does GJK algorithim in 2D ONLY. Takes incoming "state" and returns a new
+ * state representing the results of the iteration.
  * @param {VertArray|Array} shapeA
  * @param {VertArray|Array} shapeB
  * @param {State} state 
  * @returns {State}
  */
-function gjk2(shapeA, shapeB, state) {
+function gjkStateMachine(shapeA, shapeB, state) {
     let nextState = new State();
     if (state == null || state == undefined) {
         state = new State();
@@ -347,15 +383,16 @@ function gjk2(shapeA, shapeB, state) {
                     vec2.equals(state.dir, origin)) {
                     vec2.set(state.dir, 1, 1); // "random" direction to start
                 }
+
                 let a = support(shapeA, shapeB, state.dir);
+                nextState.s.push(a);
 
                 // evaluate new point
-                if (vec2.equals(a, origin)) { // a is ON the origin. don't need to continue
+                if (approxEqual(a, origin)) { // a is ON the origin. don't need to continue
                     nextState.intersection = true;
                     return nextState;
                 }
 
-                nextState.s.push(a);
                 setNextSearchDirectionFromPoint(nextState.s, nextState.dir)
 
                 return nextState;
@@ -369,13 +406,23 @@ function gjk2(shapeA, shapeB, state) {
                 nextState.s.push(a); // new simplex is a line
 
                 // evaluate new point
-                if (vec2.equals(a, origin)) { // a is ON the origin
+                if (approxEqual(a, origin)) { // a is ON the origin
                     nextState.intersection = true;
                     return nextState;
                 }
+
                 let adotdir = vec2.dot(a, state.dir);
-                if (adotdir < 0) { // a did not reach origin. don't need to continue
+                if (adotdir <= -EPSILON) { // a did not reach origin. don't need to continue
                     nextState.intersection = false;
+                    return nextState;
+                }
+
+                let b = nextState.s[0];
+                let ab = vec2.fromValues(b[0] - a[0], b[1] - a[1]);
+                if (Math.abs((ab[0] * -a[1]) - (ab[1] * -a[0])) <= EPSILON) { // find more 'elegant' method?
+                    // if ABxAO is 0 then
+                    // origin is ON the line AB
+                    nextState.intersection = true;
                     return nextState;
                 }
 
@@ -394,12 +441,12 @@ function gjk2(shapeA, shapeB, state) {
                 nextState.s.push(a); // new simplex is triangle
 
                 // evaluate new point
-                if (vec2.equals(a, origin)) { // a is ON the origin
+                if (approxEqual(a, origin)) { // a is ON the origin
                     nextState.intersection = true;
                     return nextState;
                 }
                 let adotdir = vec2.dot(a, state.dir);
-                if (adotdir < 0) { // a did not reach origin
+                if (adotdir <= -EPSILON) { // a did not reach origin
                     nextState.intersection = false;
                     return nextState;
                 }
@@ -424,15 +471,15 @@ function gjk2(shapeA, shapeB, state) {
                     acDOTao: acDOTao,
                 }
 
-                if (ab[0] * ao[1] - ab[1] * ao[0] == 0 ||
-                    ac[0] * ao[1] - ac[1] * ao[0] == 0) { // find more 'elegant' method?
-                    // if ABxAO or ABxAO is 0 then
+                if (Math.abs(ab[0] * ao[1] - ab[1] * ao[0]) <= EPSILON ||
+                    Math.abs(ac[0] * ao[1] - ac[1] * ao[0]) <= EPSILON) { // find more 'elegant' method?
+                    // if ABxAO or ACxAO is 0 then
                     // origin is ON one of the lines AB or AC
                     nextState.intersection = true;
                     return nextState;
                 }
 
-                if (abDOTao < 0 && acDOTao < 0) {
+                if (abDOTao < -EPSILON && acDOTao < -EPSILON) {
                     // origin is past A.
                     // new simplex is A, new search direction is AO
                     nextState.s.splice(0, 2); // should remove elements 0 and 1 (C and B)
@@ -473,6 +520,11 @@ function gjk2(shapeA, shapeB, state) {
     return null; // JIM LAW
 }
 
+//// GJK HELPER FUNCS ////////////////////////////////////////////////////
+
+/**@type {v2} */
+const origin = vec2.create();
+
 function setNextSearchDirectionFromPoint(simplex, nextDir) {
     vec2.subtract(nextDir, origin, simplex[0]); // equivalent to below
     vec2.normalize(nextDir, nextDir);
@@ -488,12 +540,31 @@ function setNextSearchDirectionFromTriangle() {
 }
 
 /**
+ * not the same as vec2.equals()
+ * @param {v2} a 
+ * @param {v2} b 
+ */
+function approxEqual(a, b) {
+    return Math.abs(a[0] - b[0]) <= EPSILON && Math.abs(a[1] - b[1]) <= EPSILON;
+}
+
+/**
  * 
  * @param {v2} a 
  * @param {v2} b 
  */
 function sameDirection(a, b) {
-    return vec2.dot(a, b) >= 0;
+    return vec2.dot(a, b) >= EPSILON;
+}
+
+/**
+ * 
+ * @param {v2} a 
+ * @param {v2} b 
+ * @returns {number} the Z portion of the cross product
+ */
+function cross2d(a, b) {
+    return a[0] * b[1] - a[1] * b[0];
 }
 
 /**
@@ -527,198 +598,178 @@ function triangleNormals(AB, AC) {
 }
 window.triangleNormals = triangleNormals;
 
-/**
- * 
- * @param {VertArray|Array} a 
- * @param {VertArray|Array} b 
- * @param {v2} startDir
- */
-function gjk(a, b, startDir = undefined) {
+////// FIRST ATTEMPT //////////////////////////////////////////////
+// /**
+//  * 
+//  * @param {VertArray|Array} a 
+//  * @param {VertArray|Array} b 
+//  * @param {v2} startDir
+//  */
+// function gjk(a, b, startDir = undefined) {
 
-    let dir = vec2.fromValues(15, 15); // D, "random" direction
-    // if (startDir != undefined) {
-    //     vec2.copy(dir, startDir); // need to copy dir because we'll modify it a lot
-    // }
-    line(0, 0, dir[0], dir[1]);
+//     let dir = vec2.fromValues(15, 15); // D, "random" direction
+//     // if (startDir != undefined) {
+//     //     vec2.copy(dir, startDir); // need to copy dir because we'll modify it a lot
+//     // }
+//     line(0, 0, dir[0], dir[1]);
 
-    let s = [support(a, b, dir)]; // S
-    vec2.scale(dir, s[0], -1); // D = -S (don't see need to normalize)
-    s.push(support(a, b, dir));
+//     let s = [support(a, b, dir)]; // S
+//     vec2.scale(dir, s[0], -1); // D = -S (don't see need to normalize)
+//     s.push(support(a, b, dir));
 
-    // if (vec2.dot(s[s.length - 1], dir) >= 0) { stroke('green'); }
-    // else { stroke('red'); }
-    // line(0, 0, dir[0], dir[1]);
-    // drawPoints(s);
+//     // if (vec2.dot(s[s.length - 1], dir) >= 0) { stroke('green'); }
+//     // else { stroke('red'); }
+//     // line(0, 0, dir[0], dir[1]);
+//     // drawPoints(s);
 
-    let simplexSize = 2;
+//     let simplexSize = 2;
 
-    let times = 0;
-    while (times < 4 && simplexSize > 1 && vec2.dot(s[s.length - 1], dir) >= 0) {
-        // if (vec2.dot(s[s.length - 1], dir) < 0) { console.log("terminate. origin unreachable"); }
-        console.log("run: " + times + "--------------");
+//     let times = 0;
+//     while (times < 4 && simplexSize > 1 && vec2.dot(s[s.length - 1], dir) >= 0) {
+//         // if (vec2.dot(s[s.length - 1], dir) < 0) { console.log("terminate. origin unreachable"); }
+//         console.log("run: " + times + "--------------");
 
-        simplexSize = doSimplex(s, dir, simplexSize);
-        s.push(support(a, b, dir));
-        console.log(s);
+//         simplexSize = doSimplex(s, dir, simplexSize);
+//         s.push(support(a, b, dir));
+//         console.log(s);
 
-        // if (vec2.dot(s[s.length - 1], dir) >= 0) { stroke('green'); }
-        // else { stroke('red'); }
-        // line(0, 0, dir[0], dir[1]);
-        stroke('green');
-        drawPoints(s, times);
-        times++;
+//         // if (vec2.dot(s[s.length - 1], dir) >= 0) { stroke('green'); }
+//         // else { stroke('red'); }
+//         // line(0, 0, dir[0], dir[1]);
+//         stroke('green');
+//         drawPoints(s, times);
+//         times++;
 
-        if (simplexSize == 0) {
-            console.log("Found and exit. simplexSize==0");
-            return true;
-        }
-    }
+//         if (simplexSize == 0) {
+//             console.log("Found and exit. simplexSize==0");
+//             return true;
+//         }
+//     }
 
-    console.log("exited GJK. not found");
-    return false;
-}
+//     console.log("exited GJK. not found");
+//     return false;
+// }
 
-/**
- * FUNCTION WILL ALTER "s" and "dir"
- * @param {v2[]} s 
- * @param {v2} dir 
- * @param {number} simplexSize 
- * @returns {number} new simplex size????
- */
-function doSimplex(s, dir, simplexSize) {
+// /**
+//  * FUNCTION WILL ALTER "s" and "dir"
+//  * @param {v2[]} s 
+//  * @param {v2} dir 
+//  * @param {number} simplexSize 
+//  * @returns {number} new simplex size????
+//  */
+// function doSimplex(s, dir, simplexSize) {
 
-    let a = s[s.length - 1];
-    let ao = vec3.create();
-    vec2.subtract(ao, ao, a);
-    stroke('magenta');
-    line(a[0], a[1], ao[0], ao[1]);
+//     let a = s[s.length - 1];
+//     let ao = vec3.create();
+//     vec2.subtract(ao, ao, a);
+//     stroke('magenta');
+//     line(a[0], a[1], ao[0], ao[1]);
 
-    if (simplexSize == 2) {
-        let b = s[s.length - 2];
-        let ab = vec3.create();
-        vec2.sub(ab, b, a); // seg A->B
-        let dp = vec2.dot(ao, ab);
-        switch (true) {
-            case abs(dp) < 0.01:
-                console.log("size2: dp==0");
-                return 0;
-            case dp < 0:
-                console.log("size2: dp<0");
-                // origin is beyond the A->B region
-                vec2.copy(dir, ao);
-                // s = [a];
-                s.length = 0;
-                s.push(a);
-                return 2; // new line, A-> new support
-            default: // dp > 0
-                console.log("size2: default");
-                // origin is in A->B region
-                // let ab3 = vec3.fromValues(ab[0], ab[1], 0);
-                vec3.cross(ao, ab, ao);
-                vec3.cross(ao, ao, ab); // ABxAOxAB
-                vec3.normalize(ao, ao);
-                vec3.scale(ao, ao, 20); // for show only
-                vec2.copy(dir, ao); // back to 2d vector
-                // s = [b, a];
-                s.length = 0;
-                s.push(b);
-                s.push(a);
-                return 3;
-        }
-    }
+//     if (simplexSize == 2) {
+//         let b = s[s.length - 2];
+//         let ab = vec3.create();
+//         vec2.sub(ab, b, a); // seg A->B
+//         let dp = vec2.dot(ao, ab);
+//         switch (true) {
+//             case abs(dp) < 0.01:
+//                 console.log("size2: dp==0");
+//                 return 0;
+//             case dp < 0:
+//                 console.log("size2: dp<0");
+//                 // origin is beyond the A->B region
+//                 vec2.copy(dir, ao);
+//                 // s = [a];
+//                 s.length = 0;
+//                 s.push(a);
+//                 return 2; // new line, A-> new support
+//             default: // dp > 0
+//                 console.log("size2: default");
+//                 // origin is in A->B region
+//                 // let ab3 = vec3.fromValues(ab[0], ab[1], 0);
+//                 vec3.cross(ao, ab, ao);
+//                 vec3.cross(ao, ao, ab); // ABxAOxAB
+//                 vec3.normalize(ao, ao);
+//                 vec3.scale(ao, ao, 20); // for show only
+//                 vec2.copy(dir, ao); // back to 2d vector
+//                 // s = [b, a];
+//                 s.length = 0;
+//                 s.push(b);
+//                 s.push(a);
+//                 return 3;
+//         }
+//     }
 
-    if (simplexSize == 3) {
-        let b = s[s.length - 2];
-        let c = s[s.length - 3];
-        let ab = vec3.create();
-        let ac = vec3.create();
-        vec2.subtract(ab, b, a); // seg A->B
-        vec2.subtract(ac, c, a); // seg A->C
-        // console.log("a", a, "b", b, "c", c);
-        // console.log("ao", ao);
-        // console.log("ab", ab);
-        // console.log("ac", ac);
-        let abxao = vec3.cross(vec3.create(), ab, ao);
-        let acxao = vec3.cross(vec3.create(), ac, ao);
-        // console.log(abxao,acxao);
-        switch (true) {
-            case abxao[2] * acxao[2] <= 0.01: // cross products are going opposite directions, so AO is between them
-                vec2.set(dir, ao[0], ao[1]);
-                console.log("size3: inside simplex");
-                return 0; //found
-            case vec2.dot(ao, ab) < 0 && vec2.dot(ao, ac) < 0: // beyond a
-                vec2.copy(dir, ao);
-                console.log("size3: past a");
-                // s = [a];
-                s.length = 0;
-                s.push(a);
-                return 2;
-            default:
-                console.log("size3: default");
-                // calc normals for both AB and AC and dot each with AO.
-                vec3.cross(abxao, ab, abxao);//, ab); // backwards? because of winding direction??
-                stroke('pink');
-                line(a[0], a[1], b[0], b[1]);//AB
-                line(a[0], a[1], abxao[0], abxao[1]);//normal
-                // console.log("abxaoxab", abxao);
-                if (vec2.dot(ao, abxao) >= 0.01) {
-                    console.log("side of ab", vec2.dot(ao, abxao).toFixed(3));
-                    if (abs(vec2.dot(ao, abxao)) <= 0.01) { console.log("on ab"); }
-                    vec3.normalize(abxao, abxao);
-                    vec3.scale(abxao, abxao, 30);
-                    vec2.copy(dir, abxao);
-                    // s = [b, a];
-                    s.length = 0;
-                    s.push(b);
-                    s.push(a);
-                    return 3;
-                }
-                vec3.cross(acxao, acxao, ac);
-                stroke('cyan');
-                line(a[0], a[1], c[0], c[1]);//AC
-                line(a[0], a[1], acxao[0], acxao[1]); //normal
-                // console.log("acxaoxac", acxao);
-                if (vec2.dot(ao, acxao) >= 0.01) {
-                    console.log("side of ac", vec2.dot(ao, acxao).toFixed(3));
-                    if (vec2.dot(ao, acxao) <= 0.01) { console.log("on ac"); }
-                    vec3.normalize(acxao, acxao);
-                    vec3.scale(acxao, acxao, 30);
-                    vec2.copy(dir, acxao);
-                    //swap c and b
-                    // console.log("before swap", s);
-                    // s[s.length - 2] = c;
-                    // s[s.length - 3] = b;
-                    // console.log("after swap", s);
-                    // s = [c, a];
-                    s.length = 0;
-                    s.push(c);
-                    s.push(a);
-                    return 3;
-                }
-        }
-    }
-    // for (let i = s.length - 2; i >= s.length - simplexSize; i--) {
-
-    // }
-    console.log("simplex size -1??");
-    return -1;
-}
-
-const labels = ["C", "B", "A"];
-function drawPoints(s, times = 0) {
-    let nstr = "";
-    if (times != 0) {
-        nstr = times.toString() + "|";
-    }
-    let loff = 3 - s.length;
-    for (let i = 0; i < s.length; i++) {
-        ellipse(s[i][0], s[i][1], 5);
-
-        // crappy way to make text appear correct
-        push();
-        translate(s[i][0], s[i][1])
-        // scale(1, -1);
-        text(labels[i + loff] + nstr, times * 18, 0);
-        pop();
-    }
-}
+//     if (simplexSize == 3) {
+//         let b = s[s.length - 2];
+//         let c = s[s.length - 3];
+//         let ab = vec3.create();
+//         let ac = vec3.create();
+//         vec2.subtract(ab, b, a); // seg A->B
+//         vec2.subtract(ac, c, a); // seg A->C
+//         // console.log("a", a, "b", b, "c", c);
+//         // console.log("ao", ao);
+//         // console.log("ab", ab);
+//         // console.log("ac", ac);
+//         let abxao = vec3.cross(vec3.create(), ab, ao);
+//         let acxao = vec3.cross(vec3.create(), ac, ao);
+//         // console.log(abxao,acxao);
+//         switch (true) {
+//             case abxao[2] * acxao[2] <= 0.01: // cross products are going opposite directions, so AO is between them
+//                 vec2.set(dir, ao[0], ao[1]);
+//                 console.log("size3: inside simplex");
+//                 return 0; //found
+//             case vec2.dot(ao, ab) < 0 && vec2.dot(ao, ac) < 0: // beyond a
+//                 vec2.copy(dir, ao);
+//                 console.log("size3: past a");
+//                 // s = [a];
+//                 s.length = 0;
+//                 s.push(a);
+//                 return 2;
+//             default:
+//                 console.log("size3: default");
+//                 // calc normals for both AB and AC and dot each with AO.
+//                 vec3.cross(abxao, ab, abxao);//, ab); // backwards? because of winding direction??
+//                 stroke('pink');
+//                 line(a[0], a[1], b[0], b[1]);//AB
+//                 line(a[0], a[1], abxao[0], abxao[1]);//normal
+//                 // console.log("abxaoxab", abxao);
+//                 if (vec2.dot(ao, abxao) >= 0.01) {
+//                     console.log("side of ab", vec2.dot(ao, abxao).toFixed(3));
+//                     if (abs(vec2.dot(ao, abxao)) <= 0.01) { console.log("on ab"); }
+//                     vec3.normalize(abxao, abxao);
+//                     vec3.scale(abxao, abxao, 30);
+//                     vec2.copy(dir, abxao);
+//                     // s = [b, a];
+//                     s.length = 0;
+//                     s.push(b);
+//                     s.push(a);
+//                     return 3;
+//                 }
+//                 vec3.cross(acxao, acxao, ac);
+//                 stroke('cyan');
+//                 line(a[0], a[1], c[0], c[1]);//AC
+//                 line(a[0], a[1], acxao[0], acxao[1]); //normal
+//                 // console.log("acxaoxac", acxao);
+//                 if (vec2.dot(ao, acxao) >= 0.01) {
+//                     console.log("side of ac", vec2.dot(ao, acxao).toFixed(3));
+//                     if (vec2.dot(ao, acxao) <= 0.01) { console.log("on ac"); }
+//                     vec3.normalize(acxao, acxao);
+//                     vec3.scale(acxao, acxao, 30);
+//                     vec2.copy(dir, acxao);
+//                     //swap c and b
+//                     // console.log("before swap", s);
+//                     // s[s.length - 2] = c;
+//                     // s[s.length - 3] = b;
+//                     // console.log("after swap", s);
+//                     // s = [c, a];
+//                     s.length = 0;
+//                     s.push(c);
+//                     s.push(a);
+//                     return 3;
+//                 }
+//         }
+//     }
+//
+//     console.log("simplex size -1??");
+//     return -1;
+// }
