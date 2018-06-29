@@ -13,31 +13,31 @@ import { EPSILON } from "./gl-matrix-2.4.0/src/gl-matrix/common.js";
 /**
  * @type {VertArray}
  */
-let triM = [
-    // new Float32Array([200, 0]),
+let shapeAM = [
+    new Float32Array([200, 0]),
     new Float32Array([0, 100]),
-    // new Float32Array([-50, 0]),
+    new Float32Array([-50, 0]),
     new Float32Array([0, -100]),
 ];
 
 /**
  * @type {VertArray}
  */
-let triW = [
-    // new Float32Array([200, 0]),
+let shapeAW = [
+    new Float32Array([200, 0]),
     new Float32Array([0, 100]),
-    // new Float32Array([-50, 0]),
+    new Float32Array([-50, 0]),
     new Float32Array([0, -100]),
 ];
 
 /** */
-let triTrans = mat2d.create();
-let triRot = mat2d.create();
+let shapeATrans = mat2d.create();
+let shapeARot = mat2d.create();
 
 /**
  * CIRCLE [center, radius]
  */
-let circ = [vec2.fromValues(0, 0), 100];
+let shapeB = [vec2.fromValues(0, 0), 100];
 
 // STATE CRAP ////////////////////////////////////////////
 
@@ -85,12 +85,13 @@ window.setup = function () {
     // frameRate(5);
 
     // make n-gon
-    circ = [];
-    const n = 2;
-    for (let i = 0; i < n; i++) {
-        let v = p5.Vector.fromAngle(i * TWO_PI / n, 100);
-        circ.push(vec2.fromValues(v.x, v.y));
-    }
+    // over writes previous definition as a circle
+    // shapeB = [];
+    // const n = 2;
+    // for (let i = 0; i < n; i++) {
+    //     let v = p5.Vector.fromAngle(i * TWO_PI / n, 100);
+    //     shapeB.push(vec2.fromValues(v.x, v.y));
+    // }
 
     resetStates();
 }
@@ -117,26 +118,26 @@ window.draw = function () {
 
     //triangle
     beginShape();
-    for (let i = 0; i < triW.length; i++) {
-        vertex(triW[i][0], triW[i][1]);
+    for (let i = 0; i < shapeAW.length; i++) {
+        vertex(shapeAW[i][0], shapeAW[i][1]);
     }
     endShape(CLOSE);
 
     //circle (or whatever)
-    // ellipse(0, 0, 2 * circ[1]); // draw circle
-    beginShape();
-    for (let i = 0; i < circ.length; i++) {
-        vertex(circ[i][0], circ[i][1]);
-    }
-    endShape(CLOSE);
+    ellipse(0, 0, 2 * shapeB[1]); // draw circle
+    // beginShape();
+    // for (let i = 0; i < shapeB.length; i++) {
+    //     vertex(shapeB[i][0], shapeB[i][1]);
+    // }
+    // endShape(CLOSE);
 
     // find farthest point from origin towards mouse.
     let m = vec2.fromValues(mouseX - width / 2, mouseY - height / 2);
-    let f = farthestP(triW, m);
+    let f = farthestP(shapeAW, m);
     ellipse(f[0], f[1], 5);
 
-    // f = farthestC(circ[0], circ[1], m);
-    f = farthestP(circ, m);
+    f = farthestC(shapeB[0], shapeB[1], m);
+    // f = farthestP(shapeB, m);
     ellipse(f[0], f[1], 5);
 
     // draw GJK states
@@ -183,7 +184,7 @@ window.draw = function () {
     noFill();
 
     // gjk "support point" in direction of mouse
-    f = support(triW, circ, m);
+    f = support(shapeAW, shapeB, m);
     stroke('orange');
     ellipse(f[0], f[1], 5);
 
@@ -196,37 +197,37 @@ window.draw = function () {
 window.keyPressed = function () {
     const speed = 10;
     const rot = PI / 16;
-    let triChanged = false;
+    let shapeAChanged = false;
     if (keyCode == UP_ARROW) {
-        mat2d.translate(triTrans, triTrans, [0, -speed]);
-        triChanged = true;
+        mat2d.translate(shapeATrans, shapeATrans, [0, -speed]);
+        shapeAChanged = true;
     }
     if (keyCode == DOWN_ARROW) {
-        mat2d.translate(triTrans, triTrans, [0, speed]);
-        triChanged = true;
+        mat2d.translate(shapeATrans, shapeATrans, [0, speed]);
+        shapeAChanged = true;
     }
     if (keyCode == LEFT_ARROW) {
         if (keyIsDown(SHIFT)) {
-            mat2d.rotate(triRot, triRot, -rot);
+            mat2d.rotate(shapeARot, shapeARot, -rot);
         } else {
-            mat2d.translate(triTrans, triTrans, [-speed, 0]);
+            mat2d.translate(shapeATrans, shapeATrans, [-speed, 0]);
         }
-        triChanged = true;
+        shapeAChanged = true;
     }
     if (keyCode == RIGHT_ARROW) {
         if (keyIsDown(SHIFT)) {
-            mat2d.rotate(triRot, triRot, rot);
+            mat2d.rotate(shapeARot, shapeARot, rot);
         } else {
-            mat2d.translate(triTrans, triTrans, [speed, 0]);
+            mat2d.translate(shapeATrans, shapeATrans, [speed, 0]);
         }
-        triChanged = true;
+        shapeAChanged = true;
     }
 
-    if (triChanged) {
+    if (shapeAChanged) {
         // rotate then translate each point
-        for (let i = 0; i < triM.length; i++) {
-            vec2.transformMat2d(triW[i], triM[i], triRot);
-            vec2.transformMat2d(triW[i], triW[i], triTrans);
+        for (let i = 0; i < shapeAM.length; i++) {
+            vec2.transformMat2d(shapeAW[i], shapeAM[i], shapeARot);
+            vec2.transformMat2d(shapeAW[i], shapeAW[i], shapeATrans);
         }
 
         resetStates();
@@ -235,7 +236,7 @@ window.keyPressed = function () {
     // state controls
 
     if (keyCode == 32) { //space
-        let nextState = gjkStateMachine(triW, circ, states[states.length - 1]);
+        let nextState = gjkStateMachine(shapeAW, shapeB, states[states.length - 1]);
         if (nextState.intersection == true) {
             console.log("INTERSECTION");
         }
