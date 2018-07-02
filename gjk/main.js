@@ -364,7 +364,6 @@ function farthestE(center, width, height, dir) {
     // return vec2.fromValues(width * Math.cos(theta) + center[0], height * Math.sin(theta) + center[1]);
 
     // /\ above and \/ below produce the same results (i think)
-    // later... major axis must be longer one.
 
     // let x = dir[0] / vec2.length(dir) * major;
     // let y = Math.abs((minor / major) * Math.sqrt((major * major) - (x * x)));
@@ -599,6 +598,14 @@ function gjkStateMachine(shapeA, shapeB, state) {
 
     console.log("YOU SHOULDN'T BE HERE, JIMLA!");
     return null; // JIM LAW
+}
+
+function gjkBool(shapeA, shapeB, dir = undefined, maxIterations = 8) {
+    let state = new State(dir);
+    while (state.intersection == undefined && state.iterations <= maxIterations) {
+        gjkStateMachine(shapeA, shapeB, state);
+    }
+    return state.intersection; // what about failure by max iterations?
 }
 
 //// GJK HELPER FUNCS ////////////////////////////////////////////////////
