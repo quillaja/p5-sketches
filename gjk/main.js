@@ -36,23 +36,40 @@ let shapeARot = mat2d.create();
 
 /**
  * CIRCLE [center, radius]
+ * ELLIPSE [center, width, height]
  */
-let shapeB = [vec2.fromValues(0, 0), 100];
+let shapeB = [vec2.fromValues(50, -100), 100];
+// let shapeB = [vec2.fromValues(-50, 100), 50, 150];
 
 // STATE CRAP ////////////////////////////////////////////
 
 class State {
-    constructor() {
+    constructor(dir = undefined) {
         /**@type {v2} */
         this.dir = vec2.fromValues(0, 0);
+        if (dir != undefined) {
+            vec2.copy(this.dir, dir);
+        }
         /**@type {VertArray} */
         this.s = [];
 
         this.iterations = 0;
         this.intersection = undefined;
-        // this.AdotDirWasLTZero = false;
 
         this.extras = undefined;
+    }
+
+    copy() {
+        let c = new State();
+        vec2.copy(c.dir, this.dir);
+        c.iterations = this.iterations;
+        c.intersection = this.intersection;
+        c.extras = this.extras;
+
+        for (const v of this.s) {
+            c.s.push(vec2.copy(vec2.create(), v));
+        }
+        return c;
     }
 }
 
@@ -66,7 +83,7 @@ let stateIndex = 0;
  * @param {v2} startingSearchDir 
  */
 function resetStates(startingSearchDir = undefined) {
-    let s = new State();
+    let s = new State(vec2.fromValues(1, 1));
     if (startingSearchDir != undefined) {
         vec2.copy(s.dir, startingSearchDir);
     }
@@ -81,8 +98,6 @@ function resetStates(startingSearchDir = undefined) {
 /**p5 setup() function */
 window.setup = function () {
     createCanvas(windowWidth, windowHeight - 10);
-    // v = vec2.fromValues(50, 50);
-    // frameRate(5);
 
     // make n-gon
     // over writes previous definition as a circle
@@ -92,6 +107,7 @@ window.setup = function () {
     //     let v = p5.Vector.fromAngle(i * TWO_PI / n, 100);
     //     shapeB.push(vec2.fromValues(v.x, v.y));
     // }
+    // shapeB = makeEllipse(shapeB[0], shapeB[1], shapeB[0]);
 
     resetStates();
 }
@@ -124,7 +140,8 @@ window.draw = function () {
     endShape(CLOSE);
 
     //circle (or whatever)
-    ellipse(0, 0, 2 * shapeB[1]); // draw circle
+    // ellipse(shapeB[0][0], shapeB[0][1], 2 * shapeB[1], 2 * shapeB[2]); // draw ellipse
+    ellipse(shapeB[0][0], shapeB[0][1], 2 * shapeB[1]); // draw circle
     // beginShape();
     // for (let i = 0; i < shapeB.length; i++) {
     //     vertex(shapeB[i][0], shapeB[i][1]);
@@ -136,8 +153,9 @@ window.draw = function () {
     let f = farthestP(shapeAW, m);
     ellipse(f[0], f[1], 5);
 
-    f = farthestC(shapeB[0], shapeB[1], m);
     // f = farthestP(shapeB, m);
+    f = farthestC(shapeB[0], shapeB[1], m);
+    // f = farthestE(shapeB[0], shapeB[1], shapeB[2], m);
     ellipse(f[0], f[1], 5);
 
     // draw GJK states
@@ -236,7 +254,7 @@ window.keyPressed = function () {
     // state controls
 
     if (keyCode == 32) { //space
-        let nextState = gjkStateMachine(shapeAW, shapeB, states[states.length - 1]);
+        let nextState = gjkStateMachine(shapeAW, shapeB, states[states.length - 1].copy());
         if (nextState.intersection == true) {
             console.log("INTERSECTION");
         }
@@ -286,6 +304,17 @@ function drawPoints(s, times = 0) {
     }
 }
 
+function makeEllipse(center, width, height, detail = 24) {
+    let verts = [];
+    for (let i = 0; i < detail; i++) {
+        let theta = i / detail * Math.PI * 2;
+        verts.push(vec2.fromValues(
+            center[0] + width * Math.cos(theta),
+            center[1] + height * Math.sin(theta))); // WAY better
+    }
+    return verts;
+}
+
 
 //// "SUPPORT" FUNCTIONS ////////////////////////////////////////
 
@@ -324,6 +353,51 @@ function farthestC(center, radius, dir) {
 }
 
 /**
+ * 
+ * @param {v2} center 
+ * @param {number} width 
+ * @param {number} height 
+ * @param {v2} dir 
+ */
+function farthestE(center, width, height, dir) {
+    // let theta = Math.atan2(dir[1], dir[0]);
+    // return vec2.fromValues(width * Math.cos(theta) + center[0], height * Math.sin(theta) + center[1]);
+
+    // /\ above and \/ below produce the same results (i think)
+    // later... major axis must be longer one.
+
+    // let x = dir[0] / vec2.length(dir) * major;
+    // let y = Math.abs((minor / major) * Math.sqrt((major * major) - (x * x)));
+    // if (dir[1] >= 0) {
+    //     return vec2.fromValues(x + center[0], y + center[1]);
+    // } else {
+    //     return vec2.fromValues(x + center[0], -y + center[1]);
+    // }
+
+    // this produces the point on the ellipse edge where dir intersects, but
+    // that is NOT the farthest point in dir.
+    // let theta = Math.atan2(dir[1], dir[0]);
+    // let r = (major * minor) / (Math.sqrt(Math.pow(minor * Math.cos(theta), 2) + Math.pow(major * Math.sin(theta), 2)));
+    // let rval = vec2.normalize(vec2.create(), dir);
+    // vec2.scale(rval, rval, r);
+    // return rval;
+
+    // THIS seems to work right!
+    // find point where the perpendicular of dir is tangent to the ellipse.
+    let m = -dir[0] / dir[1]; // slope of perpendicular to dir
+    let asq = width * width;
+    let bsq = height * height;
+    let denom = Math.sqrt(m * m * asq + bsq);
+    let x = (-m * asq) / denom;
+    let y = bsq / denom;
+    if (dir[1] < 0) {
+        x = -x;
+        y = -y;
+    }
+    return vec2.fromValues(x + center[0], y + center[1]);
+}
+
+/**
  * figures out what a and b are and uses appropriate support functions to
  * return the "support" point of "A-B" (minkowski difference).
  * @param {VertArray|Array} a 
@@ -336,8 +410,13 @@ function support(a, b, dir) {
     let farB = null;
     //ASSUME a and b have at least 2 elements
     if (typeof a[1] == "number") {
-        // a is a circle
-        farA = farthestC(a[0], a[1], dir);
+        if (typeof a[2] == "number") {
+            // ellipse
+            farA = farthestE(a[0], a[1], a[2], dir);
+        } else {
+            // a is a circle
+            farA = farthestC(a[0], a[1], dir);
+        }
     } else {
         // a is polygon
         farA = farthestP(a, dir);
@@ -346,8 +425,12 @@ function support(a, b, dir) {
     // have to search b in the opposite direction (-dir)
     vec2.scale(dir, dir, -1);
     if (typeof b[1] == "number") {
-        // b is a circle
-        farB = farthestC(b[0], b[1], dir);
+        if (typeof b[2] == "number") {
+            farB = farthestE(b[0], b[1], b[2], dir);
+        } else {
+            // b is a circle
+            farB = farthestC(b[0], b[1], dir);
+        }
     } else {
         //b is polygon
         farB = farthestP(b, dir);
@@ -371,11 +454,10 @@ function support(a, b, dir) {
  * @returns {State}
  */
 function gjkStateMachine(shapeA, shapeB, state) {
-    let nextState = new State();
     if (state == null || state == undefined) {
-        state = new State();
+        throw Error("'state' cannot be null,etc");
     }
-    nextState.iterations = state.iterations + 1;
+    state.iterations + 1;
 
     switch (state.s.length) {
         case 0: // initialize
@@ -386,51 +468,50 @@ function gjkStateMachine(shapeA, shapeB, state) {
                 }
 
                 let a = support(shapeA, shapeB, state.dir);
-                nextState.s.push(a);
+                state.s.push(a);
 
                 // evaluate new point
                 if (approxEqual(a, origin)) { // a is ON the origin. don't need to continue
-                    nextState.intersection = true;
-                    return nextState;
+                    state.intersection = true;
+                    return state;
                 }
 
-                setNextSearchDirectionFromPoint(nextState.s, nextState.dir)
+                setNextSearchDirectionFromPoint(state.s, state.dir)
 
-                return nextState;
+                return state;
             }
 
         case 1: // incoming simplex is point
             {
                 let a = support(shapeA, shapeB, state.dir);
 
-                nextState.s.push(...state.s); // copy previous simplex to next state
-                nextState.s.push(a); // new simplex is a line
+                state.s.push(a); // new simplex is a line
 
                 // evaluate new point
                 if (approxEqual(a, origin)) { // a is ON the origin
-                    nextState.intersection = true;
-                    return nextState;
+                    state.intersection = true;
+                    return state;
                 }
 
                 let adotdir = vec2.dot(a, state.dir);
                 if (adotdir <= -EPSILON) { // a did not reach origin. don't need to continue
-                    nextState.intersection = false;
-                    return nextState;
+                    state.intersection = false;
+                    return state;
                 }
 
-                let b = nextState.s[0];
+                let b = state.s[0];
                 let ab = vec2.fromValues(b[0] - a[0], b[1] - a[1]);
                 if (Math.abs((ab[0] * -a[1]) - (ab[1] * -a[0])) <= EPSILON) { // find more 'elegant' method?
                     // if ABxAO is 0 then
                     // origin is ON the line AB
-                    nextState.intersection = true;
-                    return nextState;
+                    state.intersection = true;
+                    return state;
                 }
 
                 // set next search direction
-                setNextSearchDirectionFromLine(nextState.s, nextState.dir);
+                setNextSearchDirectionFromLine(state.s, state.dir);
 
-                return nextState;
+                return state;
             }
 
         case 2: // incoming simplex is line
@@ -438,18 +519,17 @@ function gjkStateMachine(shapeA, shapeB, state) {
                 // get new point
                 let a = support(shapeA, shapeB, state.dir);
 
-                nextState.s.push(...state.s); // copy previous simplex to next state
-                nextState.s.push(a); // new simplex is triangle
+                state.s.push(a); // new simplex is triangle
 
                 // evaluate new point
                 if (approxEqual(a, origin)) { // a is ON the origin
-                    nextState.intersection = true;
-                    return nextState;
+                    state.intersection = true;
+                    return state;
                 }
                 let adotdir = vec2.dot(a, state.dir);
                 if (adotdir <= -EPSILON) { // a did not reach origin
-                    nextState.intersection = false;
-                    return nextState;
+                    state.intersection = false;
+                    return state;
                 }
 
                 // let normalAB = getNormalInDirectionOfPoint(a, state.s[1], origin);
@@ -462,7 +542,7 @@ function gjkStateMachine(shapeA, shapeB, state) {
                 let abDOTao = vec2.dot(ab, ao);
                 let acDOTao = vec2.dot(ac, ao);
 
-                nextState.extras = {
+                state.extras = {
                     normalAB: normalAB,
                     normalAC: normalAC,
                     ab: ab,
@@ -476,16 +556,16 @@ function gjkStateMachine(shapeA, shapeB, state) {
                     Math.abs(ac[0] * ao[1] - ac[1] * ao[0]) <= EPSILON) { // find more 'elegant' method?
                     // if ABxAO or ACxAO is 0 then
                     // origin is ON one of the lines AB or AC
-                    nextState.intersection = true;
-                    return nextState;
+                    state.intersection = true;
+                    return state;
                 }
 
                 if (abDOTao < -EPSILON && acDOTao < -EPSILON) {
                     // origin is past A.
                     // new simplex is A, new search direction is AO
-                    nextState.s.splice(0, 2); // should remove elements 0 and 1 (C and B)
-                    vec2.copy(nextState.dir, ao);
-                    return nextState;
+                    state.s.splice(0, 2); // should remove elements 0 and 1 (C and B)
+                    vec2.copy(state.dir, ao);
+                    return state;
                 }
 
                 if (sameDirection(normalAB, ao)) {
@@ -493,9 +573,9 @@ function gjkStateMachine(shapeA, shapeB, state) {
                     // so origin is in the AB region
                     // new simplex is AB,
                     // new search direction is normalAB
-                    nextState.s.splice(0, 1); // should remove element 0 (C)
-                    vec2.copy(nextState.dir, normalAB);
-                    return nextState;
+                    state.s.splice(0, 1); // should remove element 0 (C)
+                    vec2.copy(state.dir, normalAB);
+                    return state;
                 }
 
                 if (sameDirection(normalAC, ao)) {
@@ -503,14 +583,14 @@ function gjkStateMachine(shapeA, shapeB, state) {
                     // so origin is in the AC region
                     // new simplex is AC
                     // new search direction is normalAC
-                    nextState.s.splice(1, 1); // should remove element 1 (B)
-                    vec2.copy(nextState.dir, normalAC);
-                    return nextState;
+                    state.s.splice(1, 1); // should remove element 1 (B)
+                    vec2.copy(state.dir, normalAC);
+                    return state;
                 }
 
                 // origin is in triangle simplex
-                nextState.intersection = true;
-                return nextState;
+                state.intersection = true;
+                return state;
 
             }
         case 3: // incoming simplex is triangle
