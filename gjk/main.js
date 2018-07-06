@@ -41,6 +41,8 @@ let shapeARot = mat2d.create();
 let shapeB = [vec2.fromValues(50, -100), 100];
 // let shapeB = [vec2.fromValues(-50, 100), 50, 150];
 
+window.shapeA = shapeAW;
+window.shapeB = shapeB;
 // STATE CRAP ////////////////////////////////////////////
 
 class State {
@@ -101,12 +103,12 @@ window.setup = function () {
 
     // make n-gon
     // over writes previous definition as a circle
-    // shapeB = [];
-    // const n = 2;
-    // for (let i = 0; i < n; i++) {
-    //     let v = p5.Vector.fromAngle(i * TWO_PI / n, 100);
-    //     shapeB.push(vec2.fromValues(v.x, v.y));
-    // }
+    shapeB = [];
+    const n = 24;
+    for (let i = 0; i < n; i++) {
+        let v = p5.Vector.fromAngle(i * TWO_PI / n, 100);
+        shapeB.push(vec2.fromValues(v.x, v.y));
+    }
     // shapeB = makeEllipse(shapeB[0], shapeB[1], shapeB[0]);
 
     resetStates();
@@ -141,20 +143,20 @@ window.draw = function () {
 
     //circle (or whatever)
     // ellipse(shapeB[0][0], shapeB[0][1], 2 * shapeB[1], 2 * shapeB[2]); // draw ellipse
-    ellipse(shapeB[0][0], shapeB[0][1], 2 * shapeB[1]); // draw circle
-    // beginShape();
-    // for (let i = 0; i < shapeB.length; i++) {
-    //     vertex(shapeB[i][0], shapeB[i][1]);
-    // }
-    // endShape(CLOSE);
+    // ellipse(shapeB[0][0], shapeB[0][1], 2 * shapeB[1]); // draw circle
+    beginShape();
+    for (let i = 0; i < shapeB.length; i++) {
+        vertex(shapeB[i][0], shapeB[i][1]);
+    }
+    endShape(CLOSE);
 
     // find farthest point from origin towards mouse.
     let m = vec2.fromValues(mouseX - width / 2, mouseY - height / 2);
     let f = farthestP(shapeAW, m);
     ellipse(f[0], f[1], 5);
 
-    // f = farthestP(shapeB, m);
-    f = farthestC(shapeB[0], shapeB[1], m);
+    f = farthestP(shapeB, m);
+    // f = farthestC(shapeB[0], shapeB[1], m);
     // f = farthestE(shapeB[0], shapeB[1], shapeB[2], m);
     ellipse(f[0], f[1], 5);
 
@@ -193,6 +195,20 @@ window.draw = function () {
             strokeWeight(1);
             stroke('magenta');
             line(0, 0, s.extras.ao[0], s.extras.ao[1]);
+            pop();
+        }
+
+        if (s.hasOwnProperty("resolution")) {
+            push();
+            stroke('orange');
+            noFill();
+            line(0, 0, s.resolution[0], s.resolution[1]);
+            //translate each pont while drawing
+            beginShape();
+            for (let i = 0; i < shapeAW.length; i++) {
+                vertex(shapeAW[i][0] - s.resolution[0], shapeAW[i][1] - s.resolution[1]);
+            }
+            endShape(CLOSE);
             pop();
         }
 
@@ -257,6 +273,7 @@ window.keyPressed = function () {
         let nextState = gjkStateMachine(shapeAW, shapeB, states[states.length - 1].copy());
         if (nextState.intersection == true) {
             console.log("INTERSECTION");
+            nextState.resolution = sweep(shapeAW, shapeB, nextState);
         }
         if (nextState.intersection == false) {
             console.log("NO INTERSECTION POSSIBLE");
@@ -456,7 +473,7 @@ function gjkStateMachine(shapeA, shapeB, state) {
     if (state == null || state == undefined) {
         throw Error("'state' cannot be null,etc");
     }
-    state.iterations + 1;
+    state.iterations++;
 
     switch (state.s.length) {
         case 0: // initialize
@@ -602,11 +619,15 @@ function gjkStateMachine(shapeA, shapeB, state) {
 
 function gjkBool(shapeA, shapeB, dir = undefined, maxIterations = 8) {
     let state = new State(dir);
-    while (state.intersection == undefined && state.iterations <= maxIterations) {
+    while (state.intersection == undefined && state.iterations < maxIterations) {
         gjkStateMachine(shapeA, shapeB, state);
     }
-    return state.intersection; // what about failure by max iterations?
+    console.log(state);
+    return state.intersection == true;
+    // the above conditional should work to return "false" when the loop terminates
+    // due to maxIterations instead of definitive true/false on collision.
 }
+window.gjk = gjkBool;
 
 //// GJK HELPER FUNCS ////////////////////////////////////////////////////
 
@@ -685,6 +706,64 @@ function triangleNormals(AB, AC) {
     return vec2.fromValues(rval[0], rval[1]);
 }
 window.triangleNormals = triangleNormals;
+
+//// Expanding Polytrope //////////////////////////////////////////
+
+function epa(shapeA, shapeB, state) {
+
+}
+
+/**
+ * sweeps PI radians (PI/2 on either side of state.dir) stepping through
+ * edges on the minkowski difference and searching for the one with the minimum
+ * (perpendicular) distance from the origin. Returns min, which is the vector to
+ * "fix" intersection.
+ * @param {VertArray} shapeA 
+ * @param {VertArray} shapeB 
+ * @param {State} state
+ * @returns {v2} translation vector
+ */
+function sweep(shapeA, shapeB, state, n = 12) {
+    let dir = vec2.fromValues(1, 0);
+    let min = Infinity;
+    let minVec = null;
+
+    let start = Math.atan2(state.dir[1], state.dir[0]) - Math.PI / 2;
+    let step = Math.PI / n;
+    vec2.set(dir, Math.cos(start), Math.sin(start));
+    let a = support(shapeA, shapeB, dir);
+    for (let i = 1; i <= n; i++) {
+        vec2.set(dir, Math.cos(start + i * step), Math.sin(start + i * step));
+        let b = support(shapeA, shapeB, dir);
+        if (!vec2.equals(a, b)) {
+            let toEdge = edgeDistFromPoint(a, b, origin);
+            let d = vec2.squaredLength(toEdge);
+            if (d <= min) {
+                min = d;
+                minVec = toEdge;
+            }
+            a = b;
+        }
+    }
+
+    return minVec;
+}
+
+/**
+ * 
+ * @param {v2} a from vertex
+ * @param {v2} b to vertex
+ * @param {v2} point 
+ * @returns {v2} vec from point to edge perpendicular to edge
+ */
+function edgeDistFromPoint(a, b, point) {
+    let edge = vec2.fromValues(b[0] - a[0], b[1] - a[1]);
+    let ao = vec2.fromValues(point[0] - a[0], point[1] - a[1]);
+    let projection = vec2.dot(edge, ao) / vec2.squaredLength(edge);
+    vec2.scale(edge, edge, projection);
+    vec2.subtract(edge, edge, ao);
+    return edge;
+}
 
 ////// FIRST ATTEMPT //////////////////////////////////////////////
 // /**
