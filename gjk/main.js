@@ -103,12 +103,12 @@ window.setup = function () {
 
     // make n-gon
     // over writes previous definition as a circle
-    shapeB = [];
-    const n = 24;
-    for (let i = 0; i < n; i++) {
-        let v = p5.Vector.fromAngle(i * TWO_PI / n, 100);
-        shapeB.push(vec2.fromValues(v.x, v.y));
-    }
+    // shapeB = [];
+    // const n = 24;
+    // for (let i = 0; i < n; i++) {
+    //     let v = p5.Vector.fromAngle(i * TWO_PI / n, 100);
+    //     shapeB.push(vec2.fromValues(v.x, v.y));
+    // }
     // shapeB = makeEllipse(shapeB[0], shapeB[1], shapeB[0]);
 
     resetStates();
@@ -143,20 +143,20 @@ window.draw = function () {
 
     //circle (or whatever)
     // ellipse(shapeB[0][0], shapeB[0][1], 2 * shapeB[1], 2 * shapeB[2]); // draw ellipse
-    // ellipse(shapeB[0][0], shapeB[0][1], 2 * shapeB[1]); // draw circle
-    beginShape();
-    for (let i = 0; i < shapeB.length; i++) {
-        vertex(shapeB[i][0], shapeB[i][1]);
-    }
-    endShape(CLOSE);
+    ellipse(shapeB[0][0], shapeB[0][1], 2 * shapeB[1]); // draw circle
+    // beginShape();
+    // for (let i = 0; i < shapeB.length; i++) {
+    //     vertex(shapeB[i][0], shapeB[i][1]);
+    // }
+    // endShape(CLOSE);
 
     // find farthest point from origin towards mouse.
     let m = vec2.fromValues(mouseX - width / 2, mouseY - height / 2);
     let f = farthestP(shapeAW, m);
     ellipse(f[0], f[1], 5);
 
-    f = farthestP(shapeB, m);
-    // f = farthestC(shapeB[0], shapeB[1], m);
+    // f = farthestP(shapeB, m);
+    f = farthestC(shapeB[0], shapeB[1], m);
     // f = farthestE(shapeB[0], shapeB[1], shapeB[2], m);
     ellipse(f[0], f[1], 5);
 
@@ -198,15 +198,28 @@ window.draw = function () {
             pop();
         }
 
-        if (s.hasOwnProperty("resolution")) {
+        if (s.hasOwnProperty("sweep")) {
             push();
             stroke('orange');
             noFill();
-            line(0, 0, s.resolution[0], s.resolution[1]);
+            line(0, 0, s.sweep[0], s.sweep[1]);
             //translate each pont while drawing
             beginShape();
             for (let i = 0; i < shapeAW.length; i++) {
-                vertex(shapeAW[i][0] - s.resolution[0], shapeAW[i][1] - s.resolution[1]);
+                vertex(shapeAW[i][0] - s.sweep[0], shapeAW[i][1] - s.sweep[1]);
+            }
+            endShape(CLOSE);
+            pop();
+        }
+        if (s.hasOwnProperty("epa")) {
+            push();
+            stroke('purple');
+            noFill();
+            line(0, 0, s.epa[0], s.epa[1]);
+            //translate each pont while drawing
+            beginShape();
+            for (let i = 0; i < shapeAW.length; i++) {
+                vertex(shapeAW[i][0] - s.epa[0], shapeAW[i][1] - s.epa[1]);
             }
             endShape(CLOSE);
             pop();
@@ -273,7 +286,8 @@ window.keyPressed = function () {
         let nextState = gjkStateMachine(shapeAW, shapeB, states[states.length - 1].copy());
         if (nextState.intersection == true) {
             console.log("INTERSECTION");
-            nextState.resolution = sweep(shapeAW, shapeB, nextState);
+            nextState.sweep = sweep(shapeAW, shapeB, nextState);
+            nextState.epa = epa(shapeAW, shapeB, nextState);
         }
         if (nextState.intersection == false) {
             console.log("NO INTERSECTION POSSIBLE");
@@ -695,7 +709,12 @@ function getNormalInDirectionOfPoint(from, to, point) {
 }
 window.getNormalInDirectionOfPoint = getNormalInDirectionOfPoint;
 
-/**@returns {v2} */
+/**
+ * Given the triangle ABC, this returns the "outward" directed normal of
+ * AB. The returned vector is normalized.
+ * @param {v2} AB edge A->B
+ * @param {v2} AC edge A->C
+ * @returns {v2} */
 function triangleNormals(AB, AC) {
     let ab = vec3.fromValues(AB[0], AB[1], 0);
     let ac = vec3.fromValues(AC[0], AC[1], 0);
@@ -709,18 +728,71 @@ window.triangleNormals = triangleNormals;
 
 //// Expanding Polytrope //////////////////////////////////////////
 
+/**
+ * 
+ * @param {VertArray} shapeA 
+ * @param {VertArray} shapeB 
+ * @param {State} state 
+ */
 function epa(shapeA, shapeB, state) {
+    let verts = state.s.slice(); // shallow copy of GJK ending simplex
 
+    // while support point is farther than closest edge
+    let minVec = null;
+    let supDist = Infinity;
+    let loops = 0;
+    do {
+        console.log("= " + loops + " =============================");
+        let minDist = Infinity;
+        let minIndex = -1;
+        let supPt = null;
+
+        // find closest edge
+        for (let i = 0; i < verts.length; i++) {
+            let a = verts[i];
+            let b;
+            if (i + 1 == verts.length) {
+                b = verts[0];
+            } else {
+                b = verts[i + 1];
+            }
+            // console.log("a,b", a, b);
+            if (vec2.equals(a, b)) {
+                throw Error("a==b" + verts);
+            }
+            let oEdge = fromPointToEdge(a, b, origin);
+            let d = vec2.squaredLength(oEdge);
+            // console.log("edge,d", oEdge, d);
+
+            if (d < minDist) {
+                // console.log("new min");
+                // found new closest edge
+                minDist = d;
+                minVec = oEdge;
+                minIndex = i + 1; // insertion point of support point below
+            }
+        }
+
+        // get support point in that direction
+        supPt = support(shapeA, shapeB, minVec);
+        supDist = vec2.dot(minVec, supPt) / minDist; // supPt's porportion of minVec
+        verts.splice(minIndex, 0, supPt);
+        loops++;
+        console.log(supPt, supDist, verts);
+    } while (Math.abs(supDist - 1) > EPSILON && loops < 12)
+
+    return minVec;
 }
 
 /**
  * sweeps PI radians (PI/2 on either side of state.dir) stepping through
  * edges on the minkowski difference and searching for the one with the minimum
- * (perpendicular) distance from the origin. Returns min, which is the vector to
- * "fix" intersection.
+ * (perpendicular) distance from the origin. Returns min, the vector from point
+ * to the closest edge, which is the vector to "fix" intersection.
  * @param {VertArray} shapeA 
  * @param {VertArray} shapeB 
  * @param {State} state
+ * @param {number} n
  * @returns {v2} translation vector
  */
 function sweep(shapeA, shapeB, state, n = 12) {
@@ -730,19 +802,27 @@ function sweep(shapeA, shapeB, state, n = 12) {
 
     let start = Math.atan2(state.dir[1], state.dir[0]) - Math.PI / 2;
     let step = Math.PI / n;
+
+    // get an initial starting point
     vec2.set(dir, Math.cos(start), Math.sin(start));
     let a = support(shapeA, shapeB, dir);
+
     for (let i = 1; i <= n; i++) {
+        // get end point for the edge
         vec2.set(dir, Math.cos(start + i * step), Math.sin(start + i * step));
         let b = support(shapeA, shapeB, dir);
         if (!vec2.equals(a, b)) {
-            let toEdge = edgeDistFromPoint(a, b, origin);
+            // skip an "edge" if its start and end points are the same,
+            // which would be pointless to use, but also would result in
+            // divide-by-zero sort of errors in fromPointToEdge()
+            let toEdge = fromPointToEdge(a, b, origin);
             let d = vec2.squaredLength(toEdge);
             if (d <= min) {
+                // found new minimum
                 min = d;
                 minVec = toEdge;
             }
-            a = b;
+            a = b; // move up edge starting point
         }
     }
 
@@ -750,13 +830,13 @@ function sweep(shapeA, shapeB, state, n = 12) {
 }
 
 /**
- * 
+ * Calculates the vector from "point" to the edge A->B.
  * @param {v2} a from vertex
  * @param {v2} b to vertex
  * @param {v2} point 
  * @returns {v2} vec from point to edge perpendicular to edge
  */
-function edgeDistFromPoint(a, b, point) {
+function fromPointToEdge(a, b, point) {
     let edge = vec2.fromValues(b[0] - a[0], b[1] - a[1]);
     let ao = vec2.fromValues(point[0] - a[0], point[1] - a[1]);
     let projection = vec2.dot(edge, ao) / vec2.squaredLength(edge);
