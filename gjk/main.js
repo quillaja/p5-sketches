@@ -38,8 +38,8 @@ let shapeARot = mat2d.create();
  * CIRCLE [center, radius]
  * ELLIPSE [center, width, height]
  */
-let shapeB = [vec2.fromValues(50, -100), 100];
-// let shapeB = [vec2.fromValues(-50, 100), 50, 150];
+// let shapeB = [vec2.fromValues(50, -100), 100];
+let shapeB = [vec2.fromValues(-50, 100), 50, 150];
 
 window.shapeA = shapeAW;
 window.shapeB = shapeB;
@@ -142,8 +142,8 @@ window.draw = function () {
     endShape(CLOSE);
 
     //circle (or whatever)
-    // ellipse(shapeB[0][0], shapeB[0][1], 2 * shapeB[1], 2 * shapeB[2]); // draw ellipse
-    ellipse(shapeB[0][0], shapeB[0][1], 2 * shapeB[1]); // draw circle
+    ellipse(shapeB[0][0], shapeB[0][1], 2 * shapeB[1], 2 * shapeB[2]); // draw ellipse
+    // ellipse(shapeB[0][0], shapeB[0][1], 2 * shapeB[1]); // draw circle
     // beginShape();
     // for (let i = 0; i < shapeB.length; i++) {
     //     vertex(shapeB[i][0], shapeB[i][1]);
@@ -156,8 +156,8 @@ window.draw = function () {
     ellipse(f[0], f[1], 5);
 
     // f = farthestP(shapeB, m);
-    f = farthestC(shapeB[0], shapeB[1], m);
-    // f = farthestE(shapeB[0], shapeB[1], shapeB[2], m);
+    // f = farthestC(shapeB[0], shapeB[1], m);
+    f = farthestE(shapeB[0], shapeB[1], shapeB[2], m);
     ellipse(f[0], f[1], 5);
 
     // draw GJK states
@@ -286,8 +286,12 @@ window.keyPressed = function () {
         let nextState = gjkStateMachine(shapeAW, shapeB, states[states.length - 1].copy());
         if (nextState.intersection == true) {
             console.log("INTERSECTION");
+            let start = window.performance.now();
             nextState.sweep = sweep(shapeAW, shapeB, nextState);
+            console.log(`sweep() took ${window.performance.now() - start} ms`);
+            start = window.performance.now();
             nextState.epa = epa(shapeAW, shapeB, nextState);
+            console.log(`epa() took ${window.performance.now() - start} ms`);
         }
         if (nextState.intersection == false) {
             console.log("NO INTERSECTION POSSIBLE");
@@ -729,12 +733,13 @@ window.triangleNormals = triangleNormals;
 //// Expanding Polytrope //////////////////////////////////////////
 
 /**
- * 
+ * Calculates a vector in which shapeB must move in order to "unintersect" with
+ * shapeA.
  * @param {VertArray} shapeA 
  * @param {VertArray} shapeB 
  * @param {State} state 
  */
-function epa(shapeA, shapeB, state) {
+function epa(shapeA, shapeB, state, maxIterations = 12) {
     let verts = state.s.slice(); // shallow copy of GJK ending simplex
 
     // while support point is farther than closest edge
@@ -742,7 +747,6 @@ function epa(shapeA, shapeB, state) {
     let supDist = Infinity;
     let loops = 0;
     do {
-        console.log("= " + loops + " =============================");
         let minDist = Infinity;
         let minIndex = -1;
         let supPt = null;
@@ -756,16 +760,11 @@ function epa(shapeA, shapeB, state) {
             } else {
                 b = verts[i + 1];
             }
-            // console.log("a,b", a, b);
-            if (vec2.equals(a, b)) {
-                throw Error("a==b" + verts);
-            }
+
             let oEdge = fromPointToEdge(a, b, origin);
             let d = vec2.squaredLength(oEdge);
-            // console.log("edge,d", oEdge, d);
 
             if (d < minDist) {
-                // console.log("new min");
                 // found new closest edge
                 minDist = d;
                 minVec = oEdge;
@@ -773,13 +772,22 @@ function epa(shapeA, shapeB, state) {
             }
         }
 
-        // get support point in that direction
+        // get support point in the direction of the closest edge (minVec).
+        // then use dot product to find the support pt's magnitude projected onto
+        // minVec. If the support point's projection into minVec is equal to the 
+        // magnitude of minVec (ie if support point landed on the closest edge), the
+        // dot product divided by the squared magnitude of minVec (which we conveniently
+        // have in minDist) will be 1. If >1, the edge of the polytrope has not yet
+        // been found. 
         supPt = support(shapeA, shapeB, minVec);
-        supDist = vec2.dot(minVec, supPt) / minDist; // supPt's porportion of minVec
+        supDist = vec2.dot(minVec, supPt) / minDist;
+        // console.log(loops, supPt, supDist, minIndex, verts)
         verts.splice(minIndex, 0, supPt);
         loops++;
-        console.log(supPt, supDist, verts);
-    } while (Math.abs(supDist - 1) > EPSILON && loops < 12)
+
+        // using EPSILON * 100 prevents error & repeating vertices 
+        // due to floating imprecision
+    } while (supDist > 1 + EPSILON * 100 && loops < maxIterations)
 
     return minVec;
 }
