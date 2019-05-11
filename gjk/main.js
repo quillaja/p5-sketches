@@ -103,12 +103,12 @@ window.setup = function () {
 
     // make n-gon
     // over writes previous definition as a circle
-    // shapeB = [];
-    // const n = 24;
-    // for (let i = 0; i < n; i++) {
-    //     let v = p5.Vector.fromAngle(i * TWO_PI / n, 100);
-    //     shapeB.push(vec2.fromValues(v.x, v.y));
-    // }
+    shapeB = [];
+    const n = 4;
+    for (let i = 0; i < n; i++) {
+        let v = p5.Vector.fromAngle(i * TWO_PI / n, 100);
+        shapeB.push(vec2.fromValues(v.x, v.y));
+    }
     // shapeB = makeEllipse(shapeB[0], shapeB[1], shapeB[0]);
 
     resetStates();
@@ -142,22 +142,22 @@ window.draw = function () {
     endShape(CLOSE);
 
     //circle (or whatever)
-    ellipse(shapeB[0][0], shapeB[0][1], 2 * shapeB[1], 2 * shapeB[2]); // draw ellipse
+    // ellipse(shapeB[0][0], shapeB[0][1], 2 * shapeB[1], 2 * shapeB[2]); // draw ellipse
     // ellipse(shapeB[0][0], shapeB[0][1], 2 * shapeB[1]); // draw circle
-    // beginShape();
-    // for (let i = 0; i < shapeB.length; i++) {
-    //     vertex(shapeB[i][0], shapeB[i][1]);
-    // }
-    // endShape(CLOSE);
+    beginShape();
+    for (let i = 0; i < shapeB.length; i++) {
+        vertex(shapeB[i][0], shapeB[i][1]);
+    }
+    endShape(CLOSE);
 
     // find farthest point from origin towards mouse.
     let m = vec2.fromValues(mouseX - width / 2, mouseY - height / 2);
     let f = farthestP(shapeAW, m);
     ellipse(f[0], f[1], 5);
 
-    // f = farthestP(shapeB, m);
+    f = farthestP(shapeB, m);
     // f = farthestC(shapeB[0], shapeB[1], m);
-    f = farthestE(shapeB[0], shapeB[1], shapeB[2], m);
+    // f = farthestE(shapeB[0], shapeB[1], shapeB[2], m);
     ellipse(f[0], f[1], 5);
 
     // draw GJK states
@@ -313,6 +313,8 @@ window.keyPressed = function () {
             stateIndex = states.length - 1;
         }
     }
+
+    return false;
 }
 
 const labels = ["C", "B", "A"];
